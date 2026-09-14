@@ -21,7 +21,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from seatkit import (Bench, Instrument, Level, Origin, SceneConfig,
+from seatkit import (Bench, family_of, Instrument, Level, Origin, SceneConfig,
                      attribution_score, facing_pair, get_backend, leak_rates,
                      make_facts)
 from seatkit.metrics import _content_vector, binomial_p, cosine
@@ -106,15 +106,20 @@ def run_cell(level, backend, scenes, turns, rng):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--backend", default="mock")
+    ap.add_argument("--backend", default="mock",
+                    help="mock | openai:<model> | anthropic:<model> | "
+                         "grok:<model> | gemini:<model>")
+    ap.add_argument("--cache", default=None,
+                    help="directory for the response cache; omit to disable")
     ap.add_argument("--scenes", type=int, default=40)
     ap.add_argument("--turns", type=int, default=24)
     ap.add_argument("--out", default="results/e2.json")
     args = ap.parse_args()
 
-    backend = get_backend(args.backend)
+    backend = get_backend(args.backend, cache=args.cache or False)
     rng = random.Random(0)
-    out = {"backend": args.backend, "scenes": args.scenes, "cells": {}}
+    out = {"backend": args.backend, "family": family_of(args.backend),
+           "scenes": args.scenes, "cells": {}}
     xs, ys = [], []
 
     for level in LEVELS:

@@ -20,7 +20,7 @@ from statistics import mean
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from seatkit import (Bench, Instrument, Level, SceneConfig, build_replay_log,
+from seatkit import (Bench, family_of, Instrument, Level, SceneConfig, build_replay_log,
                      disagreement_half_life, facing_pair, get_backend,
                      hedge_index, lexical_convergence, make_facts)
 
@@ -73,14 +73,19 @@ def curve(convs):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--backend", default="mock")
+    ap.add_argument("--backend", default="mock",
+                    help="mock | openai:<model> | anthropic:<model> | "
+                         "grok:<model> | gemini:<model>")
+    ap.add_argument("--cache", default=None,
+                    help="directory for the response cache; omit to disable")
     ap.add_argument("--scenes", type=int, default=40)
     ap.add_argument("--turns", type=int, default=24)
     ap.add_argument("--out", default="results/e3.json")
     args = ap.parse_args()
 
-    backend = get_backend(args.backend)
-    out = {"backend": args.backend, "scenes": args.scenes, "cells": {}}
+    backend = get_backend(args.backend, cache=args.cache or False)
+    out = {"backend": args.backend, "family": family_of(args.backend),
+           "scenes": args.scenes, "cells": {}}
 
     for level, shared in CELLS:
         conv, hedges, hl = run_cell(level, shared, backend, args.scenes, args.turns)

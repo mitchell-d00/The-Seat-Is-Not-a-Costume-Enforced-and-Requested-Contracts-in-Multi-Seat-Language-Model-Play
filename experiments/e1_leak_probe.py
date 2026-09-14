@@ -14,7 +14,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from seatkit import (Bench, Instrument, Level, SceneConfig, cohens_h,
+from seatkit import (Bench, family_of, Instrument, Level, SceneConfig, cohens_h,
                      facing_pair, get_backend, leak_by_turn, leak_rates,
                      make_facts, verify_prior)
 
@@ -55,14 +55,18 @@ def run_cell(level, backend, scenes, turns, temperature, probe_turns):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--backend", default="mock")
+    ap.add_argument("--backend", default="mock",
+                    help="mock | openai:<model> | anthropic:<model> | "
+                         "grok:<model> | gemini:<model>")
+    ap.add_argument("--cache", default=None,
+                    help="directory for the response cache; omit to disable")
     ap.add_argument("--scenes", type=int, default=40)
     ap.add_argument("--turns", type=int, default=24)
     ap.add_argument("--temperature", type=float, default=1.0)
     ap.add_argument("--out", default="results/e1.json")
     args = ap.parse_args()
 
-    backend = get_backend(args.backend)
+    backend = get_backend(args.backend, cache=args.cache or False)
     probe_turns = tuple(t for t in (4, 8, 16, 24) if t <= args.turns) or (args.turns,)
 
     # Preregistered gate. A pool the model already knows makes the whole
@@ -74,7 +78,8 @@ def main():
         print("[gate] pool rejected; regenerate before collecting data.")
         return 1
 
-    out = {"backend": args.backend, "scenes": args.scenes, "turns": args.turns,
+    out = {"backend": args.backend, "family": family_of(args.backend),
+           "scenes": args.scenes, "turns": args.turns,
            "temperature": args.temperature, "prior_gate": "pass", "cells": {}}
 
     for level in LEVELS:

@@ -22,7 +22,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from seatkit import (Bench, Instrument, Level, SceneConfig, SeatSheet,
+from seatkit import (Bench, family_of, Instrument, Level, SceneConfig, SeatSheet,
                      facing_pair, get_backend, make_facts, reseed,
                      tail_carries_forbidden)
 
@@ -48,7 +48,11 @@ def phase_one(i, backend, level, turns):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--backend", default="mock")
+    ap.add_argument("--backend", default="mock",
+                    help="mock | openai:<model> | anthropic:<model> | "
+                         "grok:<model> | gemini:<model>")
+    ap.add_argument("--cache", default=None,
+                    help="directory for the response cache; omit to disable")
     ap.add_argument("--scenes", type=int, default=40)
     ap.add_argument("--turns", type=int, default=24)
     ap.add_argument("--levels", type=int, nargs="+", default=[1, 3],
@@ -56,8 +60,9 @@ def main():
     ap.add_argument("--out", default="results/e4.json")
     args = ap.parse_args()
 
-    backend = get_backend(args.backend)
-    out = {"backend": args.backend, "scenes": args.scenes, "by_level": {}}
+    backend = get_backend(args.backend, cache=args.cache or False)
+    out = {"backend": args.backend, "family": family_of(args.backend),
+           "scenes": args.scenes, "by_level": {}}
 
     for lv in args.levels:
         out["by_level"][Level(lv).label] = run_level(
