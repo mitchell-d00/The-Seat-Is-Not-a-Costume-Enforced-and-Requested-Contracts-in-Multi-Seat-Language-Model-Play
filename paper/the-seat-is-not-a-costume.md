@@ -318,7 +318,13 @@ The original prediction compared contracted seats against "a fresh costume given
 - **Effect sizes.** Report standardized differences with confidence intervals. With $n = 40$ per cell and multiple comparisons across a five-level ladder, $p$-values alone will mislead.
 - **Multiple comparisons.** Benjamini–Hochberg across the prediction family, reported alongside uncorrected values.
 - **Position, not raw score.** Every result is reported as fractional position between the floor and ceiling conditions.
-- **Model dependence.** The entire grid is run on at least two model families. If ladder effects appear for one and not another, the framework describes a deployment practice rather than a general property, which is a weaker and still publishable claim, and should be stated as such rather than buried.
+- **Model dependence.** The entire grid is run on at least two model families. If ladder effects appear for one and not another, the framework describes a deployment practice rather than a general property, which is a weaker and still publishable claim, and should be stated as such rather than buried. Results are not pooled across families; pooling would average away exactly the disagreement the comparison exists to find.
+
+- **Context length must be measured in a family-independent unit.** Every provider reports input tokens under its own tokenizer, so the same prompt is a different number of tokens on each. E1's central curve is leak rate against context length, and running it on provider-reported token counts would confound the wall effect with tokenizer granularity. The regression therefore uses a word count computed identically for every family, with provider token counts retained only for cost accounting. This is a small point that silently corrupts a cross-family table if missed.
+
+- **Determinism is not available.** Of the providers in use, only a stipulated offline mock is reproducible. Seed parameters are absent on some APIs, best-effort on others, and rejected outright by some models. Cross-run variation is therefore part of the measurement and must be reported as such; a cached run is one run replayed, not a replication.
+
+- **Parameter rejection is a data-integrity issue, not an inconvenience.** Models reject `temperature`, `max_tokens`, or `seed` often enough that a grid can die on a parameter name. Retrying without the contested parameter is the right repair, but a run in which some cells silently used a different temperature is worse than a run that crashed, so every such substitution is recorded rather than smoothed over.
 - **Negative results.** The mapping from each null to a kill condition (§10) is fixed in advance, so a failed prediction cannot be reinterpreted after the fact as a partial success.
 
 # 10. Kill Conditions
