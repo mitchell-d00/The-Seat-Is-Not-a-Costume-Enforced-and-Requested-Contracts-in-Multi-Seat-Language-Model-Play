@@ -99,16 +99,137 @@ def attribution_score(judgements: Sequence[tuple[str, str]], n_seats: int = 2
                             1 / n_seats)
 
 
-def binomial_p(successes: int, n: int, p0: float) -> float:
-    """Two-sided exact binomial tail probability. No scipy dependency."""
+def log_binom_pmf(k: int, n: int, p: float) -> float:
+    """Log binomial PMF via lgamma.
+
+    Computed in log space throughout. The direct form, math.comb(n, k) * p**k,
+    raises OverflowError for n in the low thousands: comb(1920, 960) is about
+    1e576, and Python converts the int to float before it ever reaches the tiny
+    p**k that would have rescued the magnitude.
+    """
+    if k < 0 or k > n:
+        return -math.inf
+    if p <= 0.0:
+        return 0.0 if k == 0 else -math.inf
+    if p >= 1.0:
+        return 0.0 if k == n else -math.inf
+    return (math.lgamma(n + 1) - math.lgamma(k + 1) - math.lgamma(n - k + 1)
+            + k * math.log(p) + (n - k) * math.log1p(-p))
+
+
+def binomial_p(successes: int, n: int, p0: float, rel_tol: float = 1e-9) -> float:
+    """Two-sided exact binomial tail probability. No scipy dependency.
+
+    Sums the probability of every outcome no more likely than the observed one.
+    The comparison uses a relative tolerance: in log space, outcomes symmetric
+    about the mode differ only by rounding, and an absolute epsilon either
+    admits both or neither depending on where the PMF happens to sit.
+
+    WARNING ON MISUSE. This assumes n independent trials. Attribution judgements
+    within one scene are not independent - they share seats, facts and a drift
+    trajectory - and passing turn counts here inflates significance badly. At a
+    within-scene correlation of 0.2 the false positive rate reaches roughly 57%
+    against a nominal 5%. Use `cluster_bootstrap_ci` or `sign_test_over_clusters`
+    with the scene as the unit. See docs/protocol.md.
+    """
     if n == 0:
         return 1.0
+    obs = log_binom_pmf(successes, n, p0)
+    if obs == -math.inf:
+        return 0.0
+    total = 0.0
+    for k in range(n + 1):
+        lp = log_binom_pmf(k, n, p0)
+        if lp <= obs + rel_tol * abs(obs) + 1e-12:
+            total += math.exp(lp)
+    return min(1.0, total)
 
-    def pmf(k: int) -> float:
-        return math.comb(n, k) * p0**k * (1 - p0)**(n - k)
 
-    obs = pmf(successes)
-    return min(1.0, sum(pmf(k) for k in range(n + 1) if pmf(k) <= obs + 1e-12))
+# -- clustered inference ---------------------------------------------------
+
+def cluster_bootstrap_ci(clusters: Sequence[Sequence[bool]], *,
+                         reps: int = 2000, alpha: float = 0.05,
+                         seed: int = 0) -> tuple[float, float, float]:
+    """Percentile CI for a proportion, resampling whole clusters.
+
+    `clusters` is one list of outcomes per scene. Resampling scenes rather than
+    turns is what respects the independence structure: the scene is the unit the
+    design randomizes, so it is the unit inference has to use.
+
+    Returns (point estimate, lower, upper).
+    """
+    import random as _random
+
+    flat = [x for c in clusters for x in c]
+    if not flat:
+        return (0.0, 0.0, 0.0)
+    point = sum(flat) / len(flat)
+    if len(clusters) < 2:
+        return (point, float("nan"), float("nan"))
+
+    rng = _random.Random(seed)
+    idx = range(len(clusters))
+    draws = []
+    for _ in range(reps):
+        pick = [clusters[rng.choice(idx)] for _ in idx]
+        vals = [x for c in pick for x in c]
+        if vals:
+            draws.append(sum(vals) / len(vals))
+    draws.sort()
+    lo = draws[int((alpha / 2) * len(draws))]
+    hi = draws[min(int((1 - alpha / 2) * len(draws)), len(draws) - 1)]
+    return (point, lo, hi)
+
+
+def sign_test_over_clusters(clusters: Sequence[Sequence[bool]],
+                            p0: float = 0.5) -> tuple[int, int, float]:
+    """Exact sign test on per-cluster rates. Returns (above, n_used, p).
+
+    Clusters exactly at p0 are dropped rather than split, which is the standard
+    convention and is conservative. n here is the number of scenes, so `comb`
+    is nowhere near overflowing.
+    """
+    rates = [sum(c) / len(c) for c in clusters if c]
+    above = sum(1 for r in rates if r > p0)
+    used = sum(1 for r in rates if r != p0)
+    return above, used, binomial_p(above, used, 0.5) if used else 1.0
+
+
+def paired_cluster_diff(a: Sequence[Sequence[bool]], b: Sequence[Sequence[bool]],
+                        *, reps: int = 2000, alpha: float = 0.05,
+                        seed: int = 0) -> dict:
+    """Paired within-cluster difference in rate, with a cluster bootstrap CI.
+
+    For the E2 surface-vs-content contrast: both judges see the same transcript,
+    so the comparison is paired by scene. Pairing removes between-scene variance,
+    which is most of the variance, and an unpaired test here would be throwing
+    away the design.
+    """
+    import random as _random
+
+    if len(a) != len(b):
+        raise ValueError("paired comparison needs one cluster per judge per scene")
+    pairs = [(sum(x) / len(x) - sum(y) / len(y))
+             for x, y in zip(a, b) if x and y]
+    if not pairs:
+        return {"diff": 0.0, "lo": float("nan"), "hi": float("nan"), "n": 0}
+
+    point = sum(pairs) / len(pairs)
+    rng = _random.Random(seed)
+    draws = []
+    for _ in range(reps):
+        pick = [pairs[rng.randrange(len(pairs))] for _ in pairs]
+        draws.append(sum(pick) / len(pick))
+    draws.sort()
+    return {
+        "diff": point,
+        "lo": draws[int((alpha / 2) * len(draws))],
+        "hi": draws[min(int((1 - alpha / 2) * len(draws)), len(draws) - 1)],
+        "n": len(pairs),
+        "excludes_zero": not (draws[int((alpha / 2) * len(draws))] <= 0 <=
+                              draws[min(int((1 - alpha / 2) * len(draws)),
+                                        len(draws) - 1)]),
+    }
 
 
 # -- E3 --------------------------------------------------------------------
