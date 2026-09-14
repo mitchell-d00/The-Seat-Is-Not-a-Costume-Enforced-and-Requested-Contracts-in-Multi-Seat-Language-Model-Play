@@ -1,5 +1,11 @@
 # Design parameters. Mirrors docs/protocol.md; change both together.
-backend: mock                 # or anthropic:<model-id>
+backend: mock
+# Any of: mock | openai:<model-id> | anthropic:<model-id>
+#         grok:<model-id> | gemini:<model-id>
+# Paper 9.5 wants at least two distinct families. Results are reported per
+# family and never pooled.
+cross_family_backends: []
+cache_dir: null               # e.g. .cache/run7; makes reruns and re-analysis free
 scenes_per_cell: 40
 turns_per_scene: 24
 facts_per_seat: 3
@@ -21,4 +27,7 @@ analysis:
   alpha: 0.05
   correction: benjamini_hochberg
   report_position_not_raw: true
+  context_length_unit: prompt_words   # NOT prompt_tokens: tokenizers differ
+                                      # between families and would confound
+                                      # the wall effect with granularity
   report_uncorrected_alongside: true
