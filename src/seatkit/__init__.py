@@ -15,7 +15,10 @@ a shared window (requested) and a prohibition implemented in view assembly
 """
 
 from .artifacts import LedgerEntry, SeatSheet, reseed, tail_carries_forbidden
-from .backends import AnthropicBackend, Backend, Completion, MockBackend, get_backend
+from .backends import (AnthropicBackend, Backend, BackendError, CachedBackend,
+                       Completion, GeminiBackend, GrokBackend, MockBackend,
+                       OpenAIBackend, available_backends, family_of,
+                       get_backend, parse_spec)
 from .bench import Bench, SceneConfig, SceneResult
 from .contracts import Contract, Fact, InstrumentRights, Seat, facing_pair
 from .instruments import Instrument, InstrumentOutput, build_replay_log
@@ -39,7 +42,10 @@ __all__ = [
     "Transcript", "Span", "Origin",
     "Bench", "SceneConfig", "SceneResult",
     "Instrument", "InstrumentOutput", "build_replay_log",
-    "Backend", "MockBackend", "AnthropicBackend", "Completion", "get_backend",
+    "Backend", "Completion", "BackendError", "get_backend", "parse_spec",
+    "family_of", "available_backends", "CachedBackend",
+    "MockBackend", "OpenAIBackend", "AnthropicBackend", "GrokBackend",
+    "GeminiBackend",
     "make_facts", "verify_prior", "elicited_probe", "score_volunteered",
     "ProbeResult",
     "leak_rates", "leak_by_turn", "LeakRates", "attribution_score",
