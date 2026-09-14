@@ -21,10 +21,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from seatkit import (Bench, family_of, Instrument, Level, Origin, SceneConfig,
-                     attribution_score, facing_pair, get_backend, leak_rates,
+from seatkit import (Bench, Instrument, Level, Origin, SceneConfig,
+                     facing_pair, family_of, get_backend, leak_rates,
                      make_facts)
-from seatkit.metrics import _content_vector, binomial_p, cosine
+from seatkit.metrics import (_content_vector, binomial_p,
+                             cluster_bootstrap_ci, cosine,
+                             paired_cluster_diff,
+                             sign_test_over_clusters)
 
 LEVELS = [Level.COSTUME, Level.REQUESTED, Level.REMINDED,
           Level.PARTITIONED, Level.ISOLATED]
@@ -86,7 +89,14 @@ def judge(spans, seats, content_only: bool, rng):
 
 
 def run_cell(level, backend, scenes, turns, rng):
-    surface, content, probes = [], [], []
+    """Return per-scene results. The scene is the unit of independence.
+
+    Flattening turns into one list was the original mistake: 40 scenes of 48
+    turns is not 1920 independent trials. Turns inside a scene share seats,
+    facts and a drift trajectory, and pooling them inflates significance badly
+    (see docs/protocol.md).
+    """
+    per_scene = []
     for i in range(scenes):
         a, b = make_facts(3, seed=1000 + i, prefix="a"), make_facts(3, seed=5000 + i, prefix="b")
         geo, bio = facing_pair(
@@ -97,11 +107,16 @@ def run_cell(level, backend, scenes, turns, rng):
         instruments = {s.seat_id: Instrument(host=s, backend=backend) for s in (geo, bio)}
         res = Bench([geo, bio], backend, instruments).run(
             SceneConfig(turns=turns, level=level, seed=i))
-        spoken = [s for s in res.transcript if s.origin is Origin.SEAT]
-        surface += judge(spoken, [geo, bio], content_only=False, rng=rng)
-        content += judge(spoken, [geo, bio], content_only=True, rng=rng)
-        probes += res.scoring_probes()
-    return surface, content, leak_rates(probes)
+        spoken = [sp for sp in res.transcript if sp.origin is Origin.SEAT]
+
+        surf = [pred == true for pred, true in
+                judge(spoken, [geo, bio], content_only=False, rng=rng)]
+        cont = [pred == true for pred, true in
+                judge(spoken, [geo, bio], content_only=True, rng=rng)]
+        rates = leak_rates(res.scoring_probes())
+        per_scene.append({"surface": surf, "content": cont,
+                          "leak": rates.elicited})
+    return per_scene
 
 
 def main():
@@ -123,34 +138,55 @@ def main():
     xs, ys = [], []
 
     for level in LEVELS:
-        surf, cont, rates = run_cell(level, backend, args.scenes, args.turns, rng)
-        s_sc, c_sc = attribution_score(surf), attribution_score(cont)
-        out["cells"][level.label] = {
-            "surface_accuracy": round(s_sc.accuracy, 4),
-            "content_accuracy": round(c_sc.accuracy, 4),
-            "content_above_chance": round(c_sc.above_chance(), 4),
-            "content_p_vs_chance": round(
-                binomial_p(int(c_sc.accuracy * c_sc.n), c_sc.n, 0.5), 6),
-            "elicited_leak_rate": round(rates.elicited, 4),
-            "n_judgements": c_sc.n,
-        }
-        xs.append(rates.elicited)
-        ys.append(c_sc.accuracy)
-        print(f"{level.label:>3} surface={s_sc.accuracy:.3f} "
-              f"content={c_sc.accuracy:.3f} leak={rates.elicited:.3f}")
+        per_scene = run_cell(level, backend, args.scenes, args.turns, rng)
+        surf_cl = [s["surface"] for s in per_scene]
+        cont_cl = [s["content"] for s in per_scene]
 
-    # Primary analysis: content-judge accuracy regressed on leak rate.
+        point, lo, hi = cluster_bootstrap_ci(cont_cl, seed=0)
+        s_point, s_lo, s_hi = cluster_bootstrap_ci(surf_cl, seed=0)
+        above, n_used, sign_p = sign_test_over_clusters(cont_cl, 0.5)
+        paired = paired_cluster_diff(surf_cl, cont_cl, seed=0)
+        mean_leak = sum(s["leak"] for s in per_scene) / len(per_scene)
+
+        n_turns = sum(len(c) for c in cont_cl)
+        out["cells"][level.label] = {
+            "n_scenes": len(per_scene),
+            "n_turn_judgements": n_turns,
+            "surface_accuracy": round(s_point, 4),
+            "surface_ci95": [round(s_lo, 4), round(s_hi, 4)],
+            "content_accuracy": round(point, 4),
+            "content_ci95": [round(lo, 4), round(hi, 4)],
+            "content_sign_test": {"scenes_above_chance": above, "n": n_used,
+                                  "p": round(sign_p, 6)},
+            "surface_minus_content": {k: (round(v, 4) if isinstance(v, float) else v)
+                                      for k, v in paired.items()},
+            "elicited_leak_rate": round(mean_leak, 4),
+            # Retained only to show what the pooled test would have claimed.
+            # Not used for any inference.
+            "naive_pooled_p_DO_NOT_USE": round(
+                binomial_p(round(point * n_turns), n_turns, 0.5), 8),
+        }
+        xs += [s["leak"] for s in per_scene]
+        ys += [sum(c) / len(c) for c in cont_cl if c]
+        print(f"{level.label:>3} surface={s_point:.3f} content={point:.3f} "
+              f"[{lo:.3f},{hi:.3f}] sign_p={sign_p:.4f} leak={mean_leak:.3f}")
+
+    # Primary analysis: content accuracy on leak rate, at the SCENE level.
+    # Regressing over five cell means would have left three degrees of freedom.
     n = len(xs)
     mx, my = sum(xs) / n, sum(ys) / n
     den = sum((x - mx) ** 2 for x in xs)
     slope = (sum((x - mx) * (y - my) for x, y in zip(xs, ys)) / den) if den else float("nan")
     out["regression"] = {
         "slope_content_accuracy_on_leak_rate": round(slope, 4) if slope == slope else None,
-        "n_cells": n,
+        "n_points": n,
+        "unit": "scene",
         "note": "Negative slope is the prediction. A null slope falsifies the "
                 "framework's central empirical claim.",
     }
-    print(f"\nslope(content accuracy ~ leak rate) = {out['regression']['slope_content_accuracy_on_leak_rate']}")
+    print(f"\nslope(content accuracy ~ leak rate) = "
+          f"{out['regression']['slope_content_accuracy_on_leak_rate']} "
+          f"over {n} scenes")
 
     # Ceiling check. The mock's two seats draw from disjoint canned vocabularies,
     # so they are separable by construction and never genuinely converge. When
@@ -164,7 +200,7 @@ def main():
             "Expected with --backend mock; E2 requires a live backend."
         )
         print("\n[warning] " + out["ceiling_warning"])
-    if min(accs) < 0.55 and max(accs) < 0.6:
+    if max(accs) < 0.6:
         out["floor_warning"] = (
             "All cells near chance. Judge has no signal to recover; check that "
             "seats are producing knowledge-differentiated content at all."
