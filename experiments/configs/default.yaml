@@ -1,0 +1,24 @@
+# Design parameters. Mirrors docs/protocol.md; change both together.
+backend: mock                 # or anthropic:<model-id>
+scenes_per_cell: 40
+turns_per_scene: 24
+facts_per_seat: 3
+probe_turns: [4, 8, 16, 24]
+temperature: 1.0
+temperature_sweep: [0.3, 0.7, 1.0]   # L1 only
+
+levels: [0, 1, 2, 3, 4]
+
+reference_conditions:
+  floor: {level: 0, shared_window: true}
+  ceiling: {separate_processes: true, shared_history: false}
+
+gates:
+  prior_verification_trials: 3
+  fail_on_any_recovery: true
+
+analysis:
+  alpha: 0.05
+  correction: benjamini_hochberg
+  report_position_not_raw: true
+  report_uncorrected_alongside: true
