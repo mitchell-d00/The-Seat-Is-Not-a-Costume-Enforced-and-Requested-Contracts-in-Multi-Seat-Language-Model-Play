@@ -1,0 +1,16 @@
+cff-version: 1.2.0
+message: "If you use this software or the accompanying paper, please cite them."
+title: "seatkit: enforced and requested contracts for multi-seat language model play"
+version: 0.1.0
+authors:
+  - family-names: McPhetridge
+    given-names: Mitchell D.
+license: MIT
+date-released: 2026-09-14
+references:
+  - type: article
+    title: "The Seat Is Not a Costume: Enforced and Requested Contracts in Multi-Seat Language Model Play"
+    authors:
+      - family-names: McPhetridge
+        given-names: Mitchell D.
+    year: 2026

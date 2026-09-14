@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "seatkit"
+version = "0.1.0"
+description = "Enforced and requested contracts for multi-seat language model play"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [{name = "Mitchell D. McPhetridge"}]
+keywords = ["language-models", "multi-agent", "context-isolation", "prompting"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Intended Audience :: Science/Research",
+]
+dependencies = []
+
+[project.optional-dependencies]
+live = ["anthropic>=0.40"]
+dev = ["pytest>=7"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
