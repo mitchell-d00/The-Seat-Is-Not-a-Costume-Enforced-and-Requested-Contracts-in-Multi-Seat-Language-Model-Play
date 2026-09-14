@@ -44,7 +44,7 @@ The jump that matters is **L2 → L3**. Below it, ignorance is a behaviour. At a
 git clone <this repo> && cd seat-contracts
 pip install -e .            # core, no dependencies
 pip install -e ".[live]"    # + openai, anthropic, google-genai
-pytest                      # 75 tests, no API key, under a second
+pytest                      # 86 tests, no API key, under a second
 ```
 
 Python 3.10+. The core library has no dependencies. Provider SDKs are needed only for live runs, `pytest` only for tests. Every test runs offline; provider adapters are covered by injecting fake clients.
@@ -146,9 +146,17 @@ src/seatkit/
   metrics.py    leak rates, attribution, convergence, half-life, BH, effect sizes
   artifacts.py  seat sheets and the three reseeding conditions
 experiments/    E1–E4, preflight, cross-family runner, family comparison
-tests/          75 tests. test_ladder.py is the paper's central claim
+tests/          86 tests. test_ladder.py is the paper's central claim
 docs/           enforcement ladder, protocol, backends, preregistration
 ```
+
+## The scene is the unit of independence
+
+A scene produces dozens of attribution judgements and they are not independent: same seats, same facts, one drift trajectory. Pooling them into a single binomial test rejects a true null about **57% of the time** at a within-scene correlation of 0.2, against a nominal 5%.
+
+So inference is at the scene level — `cluster_bootstrap_ci` resamples whole scenes, `sign_test_over_clusters` works on per-scene rates, and `paired_cluster_diff` pairs the surface-vs-content contrast within scene because both judges read the same transcript. Reported n is always scenes.
+
+A practical tell: if your n looks like `scenes × turns × seats`, something got pooled that shouldn't have been. That is also what made `binomial_p` overflow — `comb(1920, 960)` is ~1e576 and exceeds float range — so the crash was a symptom of the design error rather than a separate bug. It now computes in log space via `lgamma`, and E2 records the pooled p-value under a key marked `DO_NOT_USE` so the gap stays visible.
 
 ## Two things worth knowing before relying on this
 
