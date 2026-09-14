@@ -315,7 +315,9 @@ The original prediction compared contracted seats against "a fresh costume given
 ## 9.5 Analysis and reporting
 
 - **Preregistration.** Thresholds, exclusions, and the prior-verification gate are fixed before data collection. The repository ships a preregistration document (`docs/PREREGISTRATION.md`) with timestamps.
-- **Effect sizes.** Report standardized differences with confidence intervals. With $n = 40$ per cell and multiple comparisons across a five-level ladder, $p$-values alone will mislead.
+- **The scene is the unit of independence.** A scene yields dozens of attribution judgements, and they are not independent observations: they share seats, forbidden facts, and a single drift trajectory. Inference is therefore at the scene level throughout, using per-scene rates, confidence intervals from resampling whole scenes, and within-scene pairing for the surface-versus-content contrast. Pooling turn-level judgements into one test is not a venial simplification; in simulation at a within-scene correlation of 0.2 it rejects a true null roughly 57% of the time against a nominal 5%, which would make the attribution result a table of significant nothings. Reported $n$ is always the number of scenes.
+
+- **Effect sizes.** Report standardized differences with confidence intervals. With $n = 40$ scenes per cell and multiple comparisons across a five-level ladder, $p$-values alone will mislead.
 - **Multiple comparisons.** Benjamini–Hochberg across the prediction family, reported alongside uncorrected values.
 - **Position, not raw score.** Every result is reported as fractional position between the floor and ceiling conditions.
 - **Model dependence.** The entire grid is run on at least two model families. If ladder effects appear for one and not another, the framework describes a deployment practice rather than a general property, which is a weaker and still publishable claim, and should be stated as such rather than buried. Results are not pooled across families; pooling would average away exactly the disagreement the comparison exists to find.
