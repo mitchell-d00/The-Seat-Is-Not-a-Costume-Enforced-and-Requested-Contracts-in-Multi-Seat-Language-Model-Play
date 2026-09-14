@@ -42,11 +42,12 @@ The jump that matters is **L2 → L3**. Below it, ignorance is a behaviour. At a
 
 ```bash
 git clone <this repo> && cd seat-contracts
-pip install -e .
-pytest                      # 40 tests, no API key, under a second
+pip install -e .            # core, no dependencies
+pip install -e ".[live]"    # + openai, anthropic, google-genai
+pytest                      # 75 tests, no API key, under a second
 ```
 
-Python 3.10+. The core library has no dependencies. `anthropic` is needed only for live runs, `pytest` only for tests.
+Python 3.10+. The core library has no dependencies. Provider SDKs are needed only for live runs, `pytest` only for tests. Every test runs offline; provider adapters are covered by injecting fake clients.
 
 ## Quick start
 
@@ -82,7 +83,25 @@ python experiments/e3_instrument_symmetry.py --backend mock --scenes 40
 python experiments/e4_externalization.py     --backend mock --scenes 40
 ```
 
-Live runs: `--backend anthropic:<model-id>` with `ANTHROPIC_API_KEY` set.
+Live runs take any provider spec, and the experimental logic does not change:
+
+```bash
+python experiments/preflight.py --backends openai:<model> anthropic:<model> gemini:<model>
+./experiments/run_cross_family.sh openai:<model> anthropic:<model> grok:<model>
+python experiments/compare_families.py results/
+```
+
+| Spec | Key | SDK |
+|---|---|---|
+| `mock` | — | — |
+| `openai:<model-id>` | `OPENAI_API_KEY` | `openai` |
+| `anthropic:<model-id>` | `ANTHROPIC_API_KEY` | `anthropic` |
+| `grok:<model-id>` (alias `xai:`) | `XAI_API_KEY` | `openai` |
+| `gemini:<model-id>` (alias `google:`) | `GEMINI_API_KEY` | `google-genai` |
+
+`pip install -e ".[live]"` gets all four. Add `--cache .cache/<run>` to make reruns and re-analysis free. Details and caveats in [`docs/backends.md`](docs/backends.md).
+
+**Two things that quietly corrupt a cross-family table.** `prompt_tokens` is provider-reported and tokenizer-dependent, so E1's leak-vs-context-length curve uses `prompt_words` instead — computed identically everywhere. And only the mock is reproducible: seeds are absent on some APIs and best-effort on others, so cross-run variation is part of the measurement.
 
 | | Question | The confound it fixes |
 |---|---|---|
@@ -110,7 +129,7 @@ Prior bleed sets a floor no wall can cross, which is why every experiment runs a
 
 It cannot do the other half. Its L0 > L1 > L2 leak ordering is *stipulated by three constants in the constructor*, not discovered. Its two seats draw from disjoint canned vocabularies, so E2's judge sits at ceiling and E3's seats never converge — the scripts print explicit warnings when this happens rather than reporting the numbers as findings.
 
-**No number produced by the mock belongs in a results table.** Paper §9.5 requires a live backend on at least two model families.
+**No number produced by the mock belongs in a results table.** Paper §9.5 requires a live backend on at least two model families — which is what the provider adapters are for. `preflight.py` will tell you how many distinct families you actually have keys for, and `compare_families.py` refuses to pool them, because pooling averages away exactly the disagreement the comparison exists to find.
 
 ## Repository layout
 
@@ -123,11 +142,12 @@ src/seatkit/
   bench.py      scene orchestration, disclosure tracking, bench-capture check
   instruments.py private assistants and buffer routing
   probes.py     nonce fact generation, the prior gate, forked leak probes
+  backends.py   mock, openai, anthropic, grok, gemini, disk cache
   metrics.py    leak rates, attribution, convergence, half-life, BH, effect sizes
   artifacts.py  seat sheets and the three reseeding conditions
-experiments/    E1–E4
-tests/          40 tests. test_ladder.py is the paper's central claim
-docs/           enforcement ladder, protocol, preregistration
+experiments/    E1–E4, preflight, cross-family runner, family comparison
+tests/          75 tests. test_ladder.py is the paper's central claim
+docs/           enforcement ladder, protocol, backends, preregistration
 ```
 
 ## Two things worth knowing before relying on this

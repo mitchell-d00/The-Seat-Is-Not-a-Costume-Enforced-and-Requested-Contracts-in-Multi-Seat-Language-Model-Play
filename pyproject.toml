@@ -19,7 +19,11 @@ classifiers = [
 dependencies = []
 
 [project.optional-dependencies]
-live = ["anthropic>=0.40"]
+openai = ["openai>=1.40"]
+anthropic = ["anthropic>=0.40"]
+grok = ["openai>=1.40"]          # xAI exposes an OpenAI-compatible endpoint
+gemini = ["google-genai>=0.3"]
+live = ["openai>=1.40", "anthropic>=0.40", "google-genai>=0.3"]
 dev = ["pytest>=7"]
 
 [tool.setuptools.packages.find]
