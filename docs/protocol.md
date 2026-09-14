@@ -38,6 +38,21 @@ A leak is an exact value match, or a paraphrase judged equivalent by two indepen
 
 ## Analysis
 
+**Cluster before you count.** A scene produces dozens of judgements, and they
+are correlated: same seats, same facts, same drift. Treating them as independent
+trials is the single easiest way to produce a table of significant nothings. At
+a within-scene correlation of 0.2 the pooled binomial test fires on pure noise
+roughly 57% of the time against a nominal 5%.
+
+Use `cluster_bootstrap_ci` (resamples whole scenes), `sign_test_over_clusters`
+(exact, over per-scene rates), and `paired_cluster_diff` for within-scene
+contrasts. Report n as the number of scenes.
+
+A practical tell: if your n looks like scenes x turns x seats, you have pooled
+something you should not have. That is also what made `binomial_p` overflow at
+n=1920 before it was rewritten in log space - the crash was a symptom of the
+design error, not the cause.
+
 - Effect sizes with confidence intervals. `cohens_h` for proportions. With 40 scenes per cell across a five-level ladder, p-values alone will mislead.
 - Benjamini–Hochberg across the prediction family, reported alongside uncorrected values. Note that BH is step-up, not thresholding: a p below alpha can still fail to clear its rank threshold.
 - Report `n_never_converged` separately in E3. Scenes that never converged are the good outcome and must not be dropped or coded as zero.

@@ -29,9 +29,24 @@ because there is no way afterwards to tell which turns were affected.
 | P10 | Constraint survival worse under tail than under sheet | The tail/sheet distinction collapses |
 | P11 | Isolation ceiling sits well above the shared floor | **Prior bleed dominance** — walls have little to buy |
 
+## Unit of analysis
+
+**The scene is the unit of independence.** Turns within a scene share seats,
+facts, and a drift trajectory, so they are not independent trials. All inference
+is at the scene level: per-scene rates, cluster bootstrap CIs resampling whole
+scenes, and sign tests over scene rates. Surface-vs-content contrasts are paired
+within scene, since both judges read the same transcript.
+
+This is not a refinement. Pooling turn-level judgements into one binomial test
+reaches a false positive rate near 57% against a nominal 5% at a within-scene
+correlation of 0.2. Any result computed that way is uninterpretable, and E2 now
+records the pooled p-value under a key marked `DO_NOT_USE` purely so the
+difference stays visible.
+
 ## Thresholds
 
 - Significance alpha = 0.05, Benjamini–Hochberg across P1–P11.
+- Reported n is always the number of scenes, never the number of turns.
 - "Indistinguishable" (P2): the 95% CI on the difference excludes an effect of Cohen's h > 0.2.
 - "Falls to chance" (P5): 95% CI on accuracy includes 0.5.
 - "Well above" (P11): ceiling exceeds floor by Cohen's h > 0.5 on the primary convergence measure.
