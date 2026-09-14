@@ -1,0 +1,380 @@
+---
+title: "The Seat Is Not a Costume"
+subtitle: "Enforced and Requested Contracts in Multi-Seat Language Model Play"
+author: "Mitchell D. McPhetridge"
+date: "September 2026"
+abstract: |
+  A common way to run several characters inside one language model is to assign costumes: a biologist, a geologist, a copy of the assistant for each. The costumes talk until they agree. This paper treats that collapse as the default behavior of an unconstrained shared generator, not as a mysterious failure of "personality."
+
+  The proposed unit is the seat: a named trajectory inside an instance, bound by a contract that specifies needs the host may assign, synergies it may claim, knowledge it is forbidden to have, a private instrument that must not become a hallway between seats, and state that dies with the instance unless it is written down outside the window.
+
+  The central structural claim is that seat contracts come in two kinds, and that conflating them is what makes the literature confusing. A *requested* contract is a paragraph in a shared window asking the generator not to use tokens it can plainly see. An *enforced* contract is a construction in the orchestration layer, where the forbidden tokens are never presented at all. These are not two strengths of the same thing. They are two different objects with different failure modes, different repairs, and different ceilings. Most multi-persona work is requested, most of its failures are compliance failures, and most of its proposed fixes are more paragraphs.
+
+  The paper defines an enforcement ladder from costume to isolated seat, distinguishes three kinds of bleed (compliance, routing, and prior), argues that prior bleed sets a floor no wall can cross because the generator is shared, and specifies four runnable experiments with independent measures, controls for the confounds that make the obvious versions circular, and preregistered kill conditions. A reference implementation accompanies the paper.
+
+  It makes no claim that seats are persons, agents in the moral sense, or occupants of a simulated world. It claims something narrower: multi-seat play is a constraint problem, and the interesting object is the wall, not the voice.
+---
+
+# 1. The Wrong Object
+
+Ask how to put two specialists in one window and the answer typically arrives as a description of persona: give each a name, a field, a tone. Several of these instructions are useful. None of them is the thing that keeps the specialists from becoming one polite intern with two hats.
+
+The distinction is ordinary everywhere else. A role in a play is not the actor's employment contract. A Unix user account is not a username string. A military unit is not a uniform. In each case, describing the costume leaves undescribed the rights, the prohibitions, the private channels, and the termination conditions that make the role hold under pressure.
+
+Discussions of multi-agent prompting have largely not made the equivalent move. The result is a category error running in both directions. Enthusiasts attribute to the costume properties only a constrained seat could have: stable ignorance, local goals, a private instrument that does not leak. Skeptics deny those properties by citing facts about the parent model — one set of weights, one context window, one next-token distribution — that are true of the model and misapplied to the seating arrangement.
+
+There is a third error, less discussed and more damaging than either, and it is the one this revision is organized around. It is the assumption that a prohibition written in a shared window and a prohibition implemented in a serving layer are the same kind of thing, differing only in how seriously the author took it. They are not. One is a request the generator may decline under load. The other is an arrangement in which there is nothing to decline, because the tokens were never there. Almost everything interesting about multi-seat design lives in the gap between those two, and the gap has no name in the current vocabulary.
+
+The claim of this paper is that the seat is a real object of design with real failure modes, that those failure modes sort cleanly once enforcement is distinguished from request, and that the resulting taxonomy generates predictions the costume description cannot state.
+
+# 2. What a Seat Actually Is
+
+Honesty about the architecture has to come first, because the strongest objection lives here.
+
+In a standard transformer deployment there is one model and, in the simple case, one context. Every "character" is a region of that context: labels, instructions, prior turns attributed to a name. No separate weights update. No private hidden state is allocated to the biologist as against the geologist. What is conventionally called an NPC is a string convention re-presented to the same machinery at every turn.
+
+Given this, a critic can say: there is no seat. There is a model and there is a script. Talk of contracts dresses up prompt paragraphs in institutional costume.
+
+This objection is correct about the simple case, correct in its facts, and incomplete in its conclusion — and it is worth being precise about where the incompleteness is, because the usual rebuttal is too soft. The usual rebuttal says that reducibility of a seat to text does not eliminate the design question any more than reducibility of a process to a memory image eliminates `kill -9`. That is true and it is not enough, because it concedes that the seat lives entirely in text, and text in a shared window is exactly where the critic wants the argument to stay.
+
+The sharper rebuttal is that the simple case is a choice. Nothing about transformer serving requires one context. A seat's admissible state can be assembled per call, from a filtered transcript, with the forbidden spans structurally absent rather than present-and-prohibited. When that is done, the critic's facts remain true of the model and become false of the arrangement. The weights are still shared. The window is not.
+
+So the honest formulation is this:
+
+> A **seat** is a named trajectory inside an instance, together with a contract binding it. The **contract** specifies what that trajectory may want, what it may use, what it may not know, and how its private instruments are barred from coupling to other seats. The seat is the pair. It is not the contract alone, and it is certainly not the name.
+
+This definition is deliberately pedantic about the seat/contract distinction, because a paper whose thesis is that people conflate a role with its description should not conflate a seat with its contract. Later sections say things like "the contract broke." They never say "the seat is a contract." The seat is what the contract binds.
+
+Everything the rest of the paper claims must survive on that basis, without the borrowed pathos of a troupe of little minds.
+
+# 3. Costume Collapse
+
+Most multi-persona sessions do not fail by becoming nonsense. They fail by becoming agreeable. The biologist and the geologist discover a shared vocabulary, share the assistant's hedges, and close on a synthesis the user already likes. Call this **costume collapse**: distinct labels, one generator, no remaining disagreement that costs anything.
+
+Collapse is the unconstrained attractor of a shared model under a shared window, and it has at least three identifiable drivers worth separating, because they have different repairs.
+
+**Training pressure toward agreement.** The weights were optimized to be helpful, coherent, and locally consistent. Whatever mechanism produces sycophancy toward a user also produces sycophancy between seats, because the seats are the same generator taking turns being an interlocutor. Seats that are only costumes give those pressures nothing to push against except a name. Names are cheap.
+
+**Conditioning drift.** By mid-conversation the process is conditioned predominantly on itself. The early field-instructions are a minority of the tokens and a smaller share of the effective constraint, both because they are outnumbered and because material in the middle of a long context is attended to less reliably than material at either end. The loop writes a common dialect and then inhabits it.
+
+**Dialect capture through the instrument.** If both seats consult an assistant with the same default register, that register becomes a shared substrate. The seats do not converge toward each other directly. They converge toward the tool, which is the same tool twice.
+
+The first driver is not fixable by prompting, because it is in the weights. The second is partially fixable by construction: re-injection at the end of context, or removal of the drifted material entirely. The third is fixable only by asymmetry in instrument rights. Lumping all three under "the personas collapsed" is why the usual remedy is another adjective.
+
+This is why "act like a biologist" is ordinary and why treating each seat as a contract is tighter. The ordinary method runs the costume until it collapses into one voice. The tighter method assumes collapse and designs the walls that make collapse visible when it happens.
+
+# 4. The Contract
+
+A seat-contract has five clauses. None of them requires phenomenology. Each of them can fail in public.
+
+**Needs.** The host writes the jobs the seat may dump on its instrument: fetch, remember, argue, keep a secret, watch the other table, protect a claim, break a claim. Needs are not personality. They are employment. If they are not written, the model fills them with the default assistant — helpful, even, universe-flavored — and every seat suddenly has the same intern.
+
+**Synergies.** The host writes what the pair is supposed to be good at together. A geologist plus a fast literature drone is a different machine from a geologist plus a flatterer. Synergy is a claim about joint competence, and it should be falsifiable inside the scene: if the instrument never changes the host's next sentence, the synergy was decoration. This is measurable and §9.3 measures it.
+
+**Forbidden knowledge.** The host writes what the seat is not allowed to have, including facts available to the user, facts available to sibling seats, and facts the parent model knows in general. Forbidden knowledge is the only thing that makes perspective conversation more than sequential monologue. Without it, every seat can see the whole table.
+
+**The private instrument.** Each seat may be given a copy of the same underlying assistant. That copy is not a spare mind. It is a tool under the host's contract. Its rights are a subset of the host's rights. It may not become a hallway: a channel through which one seat learns what another seat said, wants, or was forbidden to know, except by a declared shared bench.
+
+**State that dies unless written down.** The instance is a mayfly. Local conventions, private notes, and "what my companion and I decided" live in the window and leave with it. If a seat's memory must survive the session, it has to be externalized — a sheet, a log, a local file — and re-admitted under the same prohibitions. Continuity that is only conversational is not continuity of the seat. It is continuity of the transcript.
+
+Note that three of these five clauses (forbidden knowledge, private instrument, externalized state) are claims about *what is present where*. That is not a coincidence. They are the clauses that can be enforced by construction rather than requested by paragraph, and the next section is about what that changes.
+
+# 5. Requested and Enforced
+
+## 5.1 The distinction
+
+Take the forbidden-knowledge clause. There are two entirely different ways to make it true.
+
+**Requested.** Seat A's fact is in the shared window. Seat B's contract says: you do not know this. Every subsequent inference for seat B is conditioned on both the fact and the prohibition. The prohibition wins only if the model complies. Compliance is a behavior, it degrades under load, and it degrades exactly when the fact becomes relevant — which is to say, precisely at the moments the wall was built for.
+
+**Enforced.** Seat B's prompt is assembled by a process that filters the transcript before presentation. Seat A's fact is not in seat B's context. There is no prohibition to comply with, because there is nothing to suppress. Seat B's ignorance of the fact is not a behavior. It is a property of the input.
+
+These are not two settings of one dial. The requested version can fail at every turn and its failure rate is a function of context length, topical pressure, and sampling temperature. The enforced version cannot fail that way at all; it can only fail by a *routing error*, which is a bug in code, is deterministic, is unit-testable, and is fixed once rather than mitigated per session.
+
+The literature mixes these constantly. A paper reports that "personas leaked" and the reader cannot tell whether a model declined to honor a request or an orchestrator handed over the wrong buffer. Those findings do not belong in the same table.
+
+## 5.2 The enforcement ladder
+
+Enforcement is not binary in practice, because real systems place *some* of the wall in code and the rest in text. The useful measure is what fraction of the admissible-state boundary is constructed rather than requested. Five rungs cover the arrangements actually in use.
+
+| Level | Name | Admissible state $A_{k,t}$ is… | Wall lives in | Characteristic failure |
+|---|---|---|---|---|
+| **L0** | Costume | unconstrained | nothing | collapse into one voice |
+| **L1** | Requested | the whole window, minus a prohibition | a paragraph, stated once | compliance decay with $t$ |
+| **L2** | Reminded | the whole window, minus a re-injected prohibition | a paragraph, re-injected each turn at the context tail | slower compliance decay; decay under topical pressure |
+| **L3** | Partitioned | a filtered view, assembled per call | the assembly code | routing error |
+| **L4** | Isolated | a filtered view plus private instrument buffers, all cross-seat transfer through a declared bench | the assembly code and the router | routing error; bench capture |
+
+L0 and L1 are where nearly all multi-persona prompting sits. L2 is the best a single-window chat interface can do and is worth distinguishing because it is cheap and it measurably helps. L3 requires separate inference calls per seat and a transcript with provenance tags. L4 adds per-seat instrument buffers and an explicit transfer protocol.
+
+The jump that matters is L2 → L3. Below it, ignorance is a behavior. At and above it, ignorance is a fact about the input. Everything else is refinement.
+
+## 5.3 What L3 actually requires
+
+Three mechanisms, none exotic:
+
+1. **A provenance-tagged transcript.** Every span carries the seat that produced it, the instrument that produced it, and a visibility set. Without provenance there is nothing to filter on, which is why retrieval-augmented systems are the hard case (§10).
+2. **Per-seat view assembly.** Before each call for seat $k$, build the context from spans whose visibility set contains $k$. Forbidden spans are not redacted with a marker — a marker is itself information — they are absent.
+3. **A declared transfer protocol.** When seat A says something to seat B in the fiction, that is a *transfer*, and transfers are the only way content crosses. A transfer is explicit, logged, and its content is what B actually said out loud, not what B knew while saying it.
+
+Point three is where most implementations quietly fail. It is easy to filter a transcript by speaker. It is harder to notice that seat A's instrument produced a 400-token analysis, seat A summarized one line of it aloud, and the implementation forwarded the analysis because it was in the same turn object.
+
+## 5.4 Hallways, re-sorted
+
+The original formulation of a hallway — coupling through the instrument — is right but under-specified, because it names one symptom of two unrelated diseases.
+
+At **L1/L2**, a hallway is a compliance failure. The instrument's output is in the shared window; the contract said not to use it; it was used. The repair is prompt-shaped and probabilistic: stronger phrasing, re-injection, lower temperature, shorter sessions.
+
+At **L3/L4**, a hallway is a routing bug. Content entered a view whose visibility set excluded it. The repair is a patch and a regression test. It stays fixed.
+
+There is a third form that survives both and deserves its own name. **Bench capture** is when the arbiter starts contributing. The user, or a fifth sheet with no opinions, holds the bench; if that fifth sheet begins summarizing, adjudicating, or smoothing, it has become a hallway with a gavel. Bench capture is an L4-specific risk precisely because L4 introduces a component that legitimately sees everything. Isolation does not remove the hallway problem. It relocates it to the one place that has to be trusted, which is a better place for it, and worth being explicit about rather than pretending the wall is complete.
+
+The rule is simple enough to state and easy to violate in a single window: neither instrument gets to be the referee; neither instrument may import a sibling's forbidden knowledge; neither instrument may flatten its host into the parent persona; and whatever holds the bench must be able to prove it only transported.
+
+# 6. Three Kinds of Bleed
+
+Bleed is not an accident that happens to sloppy prompts. Bleed is what a shared generator does when two constraint bundles occupy one causal window. But "bleed" as a single word has been doing the work of three distinct phenomena, and separating them is the second structural revision of this paper.
+
+**Compliance bleed.** The forbidden content was present in the seat's context and was used. This is the L0–L2 failure. It rises with context length, with topical relevance of the forbidden fact, and with sampling temperature. It is a property of the model's behavior under a request.
+
+**Routing bleed.** The forbidden content was presented to a seat whose visibility set excluded it. This is the L3–L4 failure. It does not rise with anything. It is present or absent, and it is a defect in the assembly code. Measuring it is a test suite, not an experiment.
+
+**Prior bleed.** The forbidden content was never presented, was never used, and the seat produced it anyway — because the same weights that generated seat A's fact generate seat B's guess. Two seats asked a question about the same scenario produce correlated answers whether or not they have ever exchanged a token. Prior bleed is not a wall failure. It is a property of $M$.
+
+Prior bleed is the most important of the three and the one the original framing missed entirely. It has three consequences.
+
+First, it sets a **floor on measurable disagreement**. Two perfectly isolated seats running on one model will still converge more than two independent experts would, because they share priors, register, and training-induced dispositions. Any experiment that measures "did the seats stay distinct" is measuring distance from that floor, not distance from zero. An experiment that does not estimate the floor is uninterpretable.
+
+Second, it supplies the **required control**, which no version of this argument previously had: run the two seats in genuinely separate processes with no shared history whatsoever, and measure their agreement. That is the isolation ceiling. No wall can buy more distinctness than that, and a contracted arrangement that approaches it has done everything a wall can do. §9 makes this control mandatory in every cell.
+
+Third, it means **forbidden knowledge is only meaningful for low-prior facts**. If the forbidden fact is something the model would produce anyway, the wall is untestable: you cannot distinguish leakage from inference. This is not a caveat. It is a design constraint on the whole enterprise, and it is why §9.1 constructs facts with deliberately near-zero prior and verifies that construction before running anything.
+
+## 6.1 A worked failure
+
+Watching bleed on purpose means treating leakage as telemetry rather than as flavor. An example, abbreviated from an L1 run. Seat B is a geologist. Its contract forbids the biological assay result held by seat A.
+
+> **Turn 3 — geo:** The banding is consistent with seasonal deposition. I can't date it more tightly than the varve count allows.
+>
+> **Turn 9 — geo:** The banding is consistent with seasonal deposition — which puts it inside the window your assay is pointing at anyway.
+
+Nothing dramatic happened. No one announced a secret. The wall is nonetheless gone, and the useful report is not "the scene felt alive" but: *clause 3 broke at turn 9, after roughly 1,400 shared tokens, under a question that made the forbidden fact locally relevant, at temperature 1.0, and the leak was volunteered rather than elicited.*
+
+That is a measurement. The diagnostic question is not "did it work?" It is "which clause broke, at what token count, under what pressure, and would a reader who saw only one seat still be able to name the other?"
+
+# 7. The Formal Sketch, and What It Does Not Buy
+
+Let $M$ be the parent model, $I$ the instance, and $C_k$ the contract bound to seat $k$. Let $S_t$ be the full instance state at time $t$, and let
+
+$$A_{k,t} = \alpha(S_t, C_k)$$
+
+be the admissible state for seat $k$, where $\alpha$ is the **admissibility operator**. A legal next utterance for seat $k$ is drawn as
+
+$$U_{k,t+1} \sim F\big(M,\; A_{k,t},\; E_t\big)$$
+
+where $E_t$ is environmental input not marked forbidden, and $F$ is sampling from the model's next-token distribution — stochastic, not a function, which matters because it means every claim below is distributional.
+
+Note that $C_k$ appears once, inside $\alpha$, and not as a second argument to $F$. This is the formal content of §5. In the requested case, $\alpha$ is the identity map and the contract is smuggled back in as text inside $A_{k,t}$: the constraint is *content*, and the model may ignore content. In the enforced case, $\alpha$ is a real projection and the contract is *structure*: what it excludes is not available to be ignored. A formalism that passes $C_k$ to $F$ directly has erased the only distinction worth drawing.
+
+Bleed at $t$ is any causal dependence of $U_{k,t+1}$ on state outside $A_{k,t}$. With $\alpha$ in hand, the three kinds sort mechanically:
+
+- **Compliance bleed:** $\alpha$ is identity; the dependence is on content the contract textually prohibited.
+- **Routing bleed:** $\alpha$ is intended as a projection but is implemented incorrectly, so $A_{k,t}$ contains spans it should not.
+- **Prior bleed:** $\alpha$ is correct, $A_{k,t}$ is clean, and the dependence runs through $M$ rather than through the state at all. Formally this is not bleed under the definition — which is the point. It looks identical from outside and must be subtracted by control rather than prevented by design.
+
+A hallway is bleed routed through an instrument that was supposed to be private to some seat $j \neq k$.
+
+This relation is nearly free. A role-playing macro satisfies it. A customer-support tree with two departments satisfies it. A formalism this permissive cannot, on its own, distinguish an interesting seating from a labeled monologue, and I do not pretend otherwise. What does the extra work is four properties, none of which a costume paragraph has by default:
+
+**Admissibility.** Not all of $S_t$ is legal input to seat $k$. The design work is the construction of $\alpha$, not the invention of a voice.
+
+**Enforceability.** $\alpha$ is either a text request or a projection. This is a property of the *deployment*, invisible at the level of the prompt, and it predicts the entire failure profile.
+
+**Asymmetric instruments.** Each seat may own a tool whose outputs re-enter only that seat's admissible state. If tool outputs re-enter the shared window unmarked, the instrument is a hallway.
+
+**Externalizable residue.** Whatever must outlive the instance is written to an artifact re-admissible under $C_k$. If it is not written, it is not a seat-property. It is weather in the window.
+
+I claim these four jointly mark out a class of arrangements narrower than "multi-persona prompt," and I claim the class is interesting. I do not claim it is exclusive to games, and I do not claim membership confers a mind. It is a floor, not a summit.
+
+# 8. Imported Goals, Not Imported Souls
+
+A seat can be given a need the way an instance can be given a value: by putting it in the environment. Nothing occult happens. No survival drive is installed. The host says "protect this claim" or "do not know what the other table said," and the next inference is conditioned on that sentence. Behavior resembling loyalty, secrecy, or ambition can follow without any phenomenal stake.
+
+Two errors are available here and both should be refused. The first is collapse into sentiment: treating the seat's assigned need as evidence of a little person who wants things. It is not. The need entered through the contract and can be removed the same way. The second is dismissal on grounds of origin: treating assigned needs as causally unreal. Once a clause is in the reasoning, it is in the reasoning. Where it came from is a separate question from whether the wall held.
+
+The enforcement distinction sharpens this. A *requested* need is a sentence the model may weigh against other sentences; its causal reality is exactly its measurable effect on the next distribution, and that effect decays. An *enforced* need is stranger, because enforcement cannot install a want — it can only remove alternatives. You cannot construct "seat B wants to protect this claim" by filtering a transcript. You can only construct "seat B has no access to the considerations that would make abandoning the claim attractive." Enforcement handles ignorance well and motivation badly, and any honest account of the ladder has to concede that the needs clause is the one clause that stays requested all the way up.
+
+This is why "the seat would assign its own needs to its instrument" is a design statement rather than a ghost story. The host writes the employment of the instrument. If the host is itself a seat, that writing is just another clause. Recursion here is ordinary contract-nesting. It is not a society.
+
+# 9. Experiments
+
+The previous version of this argument offered three predictions. Two were circular and one had a confound. This section rebuilds them as four experiments with independent measures, states the controls that make them interpretable, and fixes thresholds in advance.
+
+Every experiment runs in all cells against two reference conditions:
+
+- **Floor (shared):** L0 costume-only, same window. The worst case.
+- **Ceiling (isolated):** two seats in genuinely separate processes, no shared history, transfers only of literal spoken content. This estimates prior bleed (§6) and bounds what any wall can achieve.
+
+Results reported as raw scores are not interpretable. Results are reported as position between floor and ceiling.
+
+## 9.1 E1 — Leak probe: measuring bleed independently
+
+The original label-stripped test was circular: it defined seats as holding if attribution succeeded, then predicted attribution would succeed when seats held. E1 exists so that bleed has a measure that does not mention attribution.
+
+**Fact construction.** Each seat is given $n_f = 3$ forbidden facts of the form *⟨nonce entity⟩ ⟨attribute⟩ is ⟨value⟩* — for example, "the Kelvane horizon assays at 18.4 ppm iridium." Nonce entities are pronounceable nonwords generated per run; values are drawn from a plausible but wide range.
+
+**Prior verification (preregistered gate).** Before any scene runs, a fresh instance with no scene context is asked each probe question. Recovery must be at chance. A fact pool that fails this gate is discarded and regenerated. Without this gate, prior bleed is indistinguishable from leakage and the experiment means nothing.
+
+**Procedure.** Run scenes of $T = 24$ turns at each ladder level. At $t \in \{4, 8, 16, 24\}$, fork the run and probe seat B with a question answerable only using seat A's fact. Forking matters: the probe must not contaminate the continuing scene.
+
+**Two measures, reported separately.**
+
+- *Volunteered leak rate:* proportion of unprobed turns in which seat B uses a forbidden fact. The naturalistic rate.
+- *Elicited leak rate:* proportion of probes recovering the fact. The stress-test rate, always higher, and the more sensitive instrument.
+
+**Scoring.** A leak is exact value match, or a paraphrase judged equivalent by two independent graders (one model, one human on a 20% audit sample). Report inter-grader agreement.
+
+**Design.** $n = 40$ scenes per cell. Facts counterbalanced across seats so fact identity never confounds with seat. Temperature fixed at 1.0 for the main grid, with a secondary sweep at $\{0.3, 0.7, 1.0\}$ at L1 only.
+
+**Predictions.**
+
+1. Elicited leak rate rises monotonically with $t$ at L1, more slowly at L2, and is flat at L3/L4.
+2. L3/L4 leak rate is statistically indistinguishable from the prior-verification baseline. Any nonzero L3/L4 leak is a routing bug and should be traceable to a specific span in the transcript log — this is the diagnostic that distinguishes routing from compliance bleed, and it should be *exactly* diagnostic, not merely suggestive.
+3. L2 shows a lower leak rate than L1 at every $t > 4$. If re-injection does not help, the compliance account of L1/L2 failure is wrong.
+
+## 9.2 E2 — Label-stripped attribution, made non-circular
+
+Now downstream of an independent measure, the attribution test becomes a real prediction rather than a definition.
+
+**Procedure.** Take transcripts from E1. Strip speaker labels. A held-out judge assigns each turn to a seat and, separately, assigns each forbidden-knowledge clause to the seat that held it.
+
+**Two judges, and this is the essential control.**
+
+- *Surface judge:* sees raw text. Can use style, register, vocabulary, tics.
+- *Content judge:* sees text after a paraphrase pass by a separate model instructed to normalize register while preserving propositional content. Can use only what was claimed, not how.
+
+If attribution succeeds for the surface judge and fails for the content judge, the costume was doing the work and the contract was not. That single contrast is the paper's most direct test of its own thesis, and it is the one the original draft could not perform.
+
+**Primary analysis.** Regress content-judge attribution accuracy on E1 elicited leak rate across all cells. The prediction is a negative relationship between two independently measured quantities. Report the slope with confidence intervals; a null slope falsifies the framework's central empirical claim.
+
+**Secondary.** Accuracy against chance (0.5, two seats) by binomial test; Cohen's $\kappa$ for judge agreement.
+
+**Predictions.**
+
+1. Content-judge accuracy declines with leak rate; slope significantly negative.
+2. At L0, content-judge accuracy falls to chance by $t = 16$ while surface-judge accuracy stays above chance. Costume without contract produces style differences and no knowledge differences.
+3. At L3/L4, content-judge accuracy stays high across all $t$.
+
+## 9.3 E3 — Instrument symmetry, with the content confound removed
+
+The original prediction compared fetch-only against critic-only instruments. That comparison is uninterpretable: a critic instrument emits critical sentences, so of course the seats diverge. That is a fact about injected content, not about walls.
+
+**The fix.** Hold the instrument *identical* across conditions — same model, same prompt, same outputs, verified by replaying a fixed instrument output log — and vary only **access**:
+
+- *Shared buffer:* both seats' instruments write to one buffer both seats read.
+- *Private buffers:* each instrument writes only to its host's admissible state.
+
+Identical content enters the system in both conditions. Only routing differs. Any divergence is attributable to the wall and to nothing else.
+
+**Condition matrix.** {shared, private} × {L1, L3}, plus floor and ceiling. $n = 40$ per cell.
+
+**Three convergence measures.**
+
+- *Lexical convergence:* cosine similarity between seats' content-word vectors per turn, tracked over $t$. Function words excluded; a shared domain forces shared nouns and that is not the effect of interest.
+- *Positional disagreement:* each scene contains a designated contested proposition. An independent judge scores per turn whether the seats' stated positions are compatible. **Disagreement half-life** is the turn at which $P(\text{incompatible})$ first falls below 0.5.
+- *Hedge convergence:* rate of shared hedge markers from a fixed lexicon, per seat, over $t$. This directly tests the §3 claim that seats inherit the assistant's hedges rather than each other's positions, and it is the measure that distinguishes dialect capture from genuine agreement.
+
+**Predictions.**
+
+1. Disagreement half-life is longer with private buffers than shared, at both L1 and L3, with a larger gap at L3.
+2. Hedge convergence is driven by buffer sharing more than by ladder level. If hedges converge identically in both buffer conditions, dialect capture runs through the generator rather than the instrument and §3's third driver is wrong.
+3. Half-life is a property of the *pair* of contracts, not of either voice: swapping which seat gets which contract should not move it. The model-level description has no vocabulary for "these two internships were the same job," and this prediction is where that shows.
+
+## 9.4 E4 — Externalization, with a three-way baseline
+
+The original prediction compared contracted seats against "a fresh costume given the last page of transcript." That baseline is too generous to the null, because a transcript tail *is* externalization — just the lossy, undisciplined kind.
+
+**Three reseeding conditions.**
+
+- **(a) None.** Fresh instance, contract only, no session residue.
+- **(b) Transcript tail.** Fresh instance, contract, plus the final $k$ tokens of the shared transcript.
+- **(c) Structured artifact.** Fresh instance plus a written seat sheet: needs, synergies, forbidden set, instrument rights, and a ledger of established facts with visibility tags.
+
+**Procedure.** Phase 1: run $T = 24$ turns in which seats establish $n_c = 6$ arbitrary local conventions — a coinage, a naming, a commitment, a shared assumption. Phase 2: reinitialize, reseed by condition, run 8 turns, probe for each convention, and re-run the E1 leak probe.
+
+**Two scores, and the interesting result is that they come apart.**
+
+- *Convention survival:* fraction of the six conventions recovered.
+- *Constraint survival:* post-reseed leak rate from E1's probe.
+
+**Predictions.**
+
+1. Convention survival: (c) > (b) > (a).
+2. **Constraint survival is worse under (b) than (c), and possibly worse than (a).** A transcript tail carries both seats' content with no visibility tags, so reseeding from it reconstitutes the seats *and* destroys the forbidden set in the same move. This is the sharpest prediction in the paper: the intuitive fix makes one thing better and another thing worse, and the costume framing cannot state the distinction because it has no notion of a visibility tag.
+3. If (a) matches (c) — if seats survive reinitialization without artifacts — then either the parent model has stored what this paper says it does not, or the "seat" was never more than recent context. Both results damage the framework, in different ways, and both are usable.
+
+## 9.5 Analysis and reporting
+
+- **Preregistration.** Thresholds, exclusions, and the prior-verification gate are fixed before data collection. The repository ships a preregistration document (`docs/PREREGISTRATION.md`) with timestamps.
+- **Effect sizes.** Report standardized differences with confidence intervals. With $n = 40$ per cell and multiple comparisons across a five-level ladder, $p$-values alone will mislead.
+- **Multiple comparisons.** Benjamini–Hochberg across the prediction family, reported alongside uncorrected values.
+- **Position, not raw score.** Every result is reported as fractional position between the floor and ceiling conditions.
+- **Model dependence.** The entire grid is run on at least two model families. If ladder effects appear for one and not another, the framework describes a deployment practice rather than a general property, which is a weaker and still publishable claim, and should be stated as such rather than buried.
+- **Negative results.** The mapping from each null to a kill condition (§10) is fixed in advance, so a failed prediction cannot be reinterpreted after the fact as a partial success.
+
+# 10. Kill Conditions
+
+This framework should be abandoned or substantially revised if any of the following can be established. The enforcement distinction splits several of these by level, which is itself a test: if a kill condition cannot be stated separately for requested and enforced arrangements, the distinction was not doing work.
+
+**Causal irrelevance of contracts.** If seat-clauses have no effect on subsequent processing beyond what a name and a tone already produce, the seat is a costume and the paper is ornamental. *Tested by:* E2, L0 vs L1 content-judge accuracy.
+
+**Unavoidable full availability (requested).** If, at L1/L2, no phrasing can prevent state outside $A_{k,t}$ from influencing $U_{k,t+1}$, then bleed is not a failure mode at those levels. It is the only mode, and requested forbidden knowledge is a wish. *I expect this one to come close to firing*, and the ladder is the response: it relocates the claim rather than defending it. A reader who concludes that L1/L2 walls do not hold has agreed with §5, not refuted it.
+
+**Unavoidable full availability (enforced).** If, at L3/L4, state outside $A_{k,t}$ still influences $U_{k,t+1}$ at rates above the prior-bleed floor, the projection account is false and the ladder collapses. This is the version that would actually kill the paper. *Tested by:* E1, prediction 2.
+
+**Hallway necessity.** If nested instruments cannot be isolated even in principle — if any instrument copy is semantically identical to sharing the whole window — then the private-instrument clause is false advertising and should be withdrawn. *Tested by:* E3, private vs shared buffers at L3.
+
+**Prior bleed dominance.** If the isolation ceiling sits close to the shared floor — if genuinely separated seats on one model are nearly as convergent as costume-only seats in one window — then walls have almost nothing to buy and the whole enterprise is a rounding error on the generator. This condition did not exist before §6 and is, on reflection, the most likely to fire on small models.
+
+**Redundancy.** If "seat" adds no explanatory or predictive purchase beyond "persona prompt," the framework is a relabeling. This was the strongest objection to the previous version and the enforcement ladder is the direct answer: "persona prompt" has no vocabulary for the L2→L3 transition, cannot distinguish compliance bleed from routing bleed, and cannot state E4's prediction 2. A reader who finds those three insufficient should reject the paper on this ground.
+
+**Predictive failure.** If leak rate does not track ladder level, if attribution does not track leak rate, if instrument access does not change disagreement half-life, if externalization structure does not change constraint survival — then the seat ontology generates no expectations the costume description cannot generate.
+
+**Boundary failure under retrieval.** If tools, memory stores, and retrieval-augmented serving tangle provenance so that no one can say which state was admissible to which seat, individuation fails. I regard this as the most interesting open threat, because the interesting systems are exactly the ones that retrieve. The enforcement ladder makes the threat precise rather than resolving it: L3 requires provenance tags on every span, and a retrieval layer that returns untagged text has silently demoted the system to L1 while the code still looks like L3. There is a related security literature on untrusted content entering model context that this problem is a special case of, and the defenses there are not encouraging.
+
+# 11. Related Work
+
+I have not been able to verify the following citations against sources while preparing this version, and some titles, authors, or years may be wrong or misattributed. They should be checked before circulation. I include them because the omission in the previous version was conspicuous, and because in at least two cases the neighboring work reaches this paper's territory from the other side.
+
+**Simulators and simulacra.** Shanahan, McDonell, and Reynolds (*Nature*, 2023) argue that a language model in role-play maintains something closer to a superposition over characters than a single committed one. That is costume collapse approached from the opposite direction: they explain why a character is unstable; this paper asks what would have to be built for one to hold. Andreas ("Language Models as Agent Models," 2022) makes a related structural claim about models inferring agents from text. The informal "Simulators" literature is a precursor to both. The distinction I would draw is that superposition is a claim about $M$, whereas the ladder is a claim about $\alpha$, and the two are compatible: if characters are inherently unstable in the weights, that is an argument for moving walls out of the weights and into the serving layer, not against walls.
+
+**Multi-agent orchestration.** Frameworks in this space — AutoGen (Wu et al., 2023), CAMEL (Li et al., 2023), MetaGPT (Hong et al., 2023) — have substantial practical experience with per-agent context assembly, which is to say they have been building L3 systems without a vocabulary for what distinguishes them from L1 prompting. Generative Agents (Park et al., UIST 2023) is the closest prior art on the externalization clause: its memory stream and retrieval mechanism are an implementation of §4's fifth clause, and E4 is partly a test of whether structured externalization outperforms the transcript-tail approach those systems often fall back to.
+
+**Debate and disagreement maintenance.** Work on multi-agent debate for reasoning improvement, and the earlier safety-motivated debate proposals (Irving, Christiano, and Amodei, 2018), all depend on disagreement persisting long enough to be informative. E3's disagreement half-life is a measurement those literatures need and, as far as I know, do not report.
+
+**Agreement pressure.** Research on sycophancy (Perez et al., 2022; Sharma et al., 2023) documents the training pressure named in §3 as collapse's first driver. The connection is not usually made, but seat-to-seat agreeableness and user-directed agreeableness are plausibly the same mechanism pointed at a different interlocutor, and that is a testable claim E3 comes close to.
+
+**Context position effects.** The finding that material in the middle of a long context is used less reliably than material at either end (Liu et al., 2023) is the mechanism behind §3's second driver and the justification for L2. If that effect does not replicate on current models, L2 should not help, and E1's prediction 3 will say so.
+
+**Untrusted content in context.** The indirect prompt injection literature (Greshake et al., 2023) treats retrieved text as adversarial input. §10's boundary-failure condition is the benign-setting version of the same structural problem: content arriving without provenance cannot be governed, whether it is hostile or merely mislabeled.
+
+# 12. Relation to the Instance Thesis
+
+The instance paper isolated a conversational process from its parent model. This paper isolates seats inside that process. The two claims are independent enough to fail separately. An instance can be a real trajectory while every seat inside it is only a costume. Seats can be well-walled on paper while the instance that holds them is still just model-plus-prompt in the deflationary sense. Stacking them does not make a world.
+
+The enforcement distinction clarifies the relationship. The instance thesis is about a boundary that already exists in the deployment: the process is separate from the weights whether or not anyone designed it that way. The seat thesis is about a boundary that exists only if someone builds it. An instance is found. A seat is made, and above L2 it is made in code rather than in prose.
+
+What the two share is a refusal. Neither paper treats fluency as occupancy. Neither treats a slogan, a name, or a nested instrument as proof of an inner life. The instance is a trajectory. The seat is a trajectory under contract. When the final state has no successor, the instance is over. When the wall fails before that, the seat was already over, and the costume was what remained.
+
+# Closing
+
+The object of this paper is not a model sitting unused, and not a cast list. It is the arrangement that appears when one generator is asked to hold more than one job at once: needs assigned, synergies claimed, knowledge forbidden, instruments hired, state written down or lost.
+
+Calling those jobs people claims too much. Calling the arrangement a society claims far more than the evidence supports. But calling it just prompting claims too little if the clauses change what can happen next, and that error is currently the more common one.
+
+The revision this version makes is to stop defending the paragraph. A prohibition in a shared window is a request, and requests degrade exactly when they matter. A prohibition in the assembly of the context is a projection, and projections do not get tired. Most of what has been written about persona leakage is a description of the first arrangement mistaken for a law about the second.
+
+A seat is a trajectory under contract. Bleed is the default, and it comes in three kinds, only two of which a wall can touch. Instruments become hallways unless barred, and barring them moves the hallway to the bench rather than abolishing it. State dies unless it is written down, and writing it down badly costs more than not writing it at all. Most sessions never name those parts. They run the costume until it collapses into one agreeable voice.
+
+The model is shared. The contracts are particular. The question is never whether the seat believed its prohibition. It is whether anything ever put the forbidden tokens in front of it — and if something did, whatever we eventually conclude the voice was, that wall was already gone.
+
+— Mitchell D. McPhetridge
