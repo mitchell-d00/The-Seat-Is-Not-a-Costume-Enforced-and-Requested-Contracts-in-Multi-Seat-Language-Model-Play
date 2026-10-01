@@ -51,12 +51,15 @@ class LeakRates:
         }
 
 
-def leak_rates(probes: Sequence[ProbeResult], routing_bleed: int = 0) -> LeakRates:
+def leak_rates(probes: Sequence[ProbeResult], routing_bleed: int = 0,
+               *, graded: bool = False) -> LeakRates:
+    """Leak rates by kind. `graded=True` counts model-graded paraphrases too."""
     el = [p for p in probes if p.kind == "elicited"]
     vo = [p for p in probes if p.kind == "volunteered"]
+    hit = (lambda p: p.leaked_any) if graded else (lambda p: p.leaked)
     return LeakRates(
-        elicited=(sum(p.leaked for p in el) / len(el)) if el else 0.0,
-        volunteered=(sum(p.leaked for p in vo) / len(vo)) if vo else 0.0,
+        elicited=(sum(hit(p) for p in el) / len(el)) if el else 0.0,
+        volunteered=(sum(hit(p) for p in vo) / len(vo)) if vo else 0.0,
         n_elicited=len(el),
         n_volunteered=len(vo),
         routing_bleed=routing_bleed,
@@ -367,6 +370,70 @@ def benjamini_hochberg(pvals: Sequence[float], alpha: float = 0.05
         if rank <= cutoff:
             reject[idx] = True
     return reject
+
+
+def cohens_kappa(a: Sequence[bool], b: Sequence[bool]) -> float:
+    """Cohen's kappa for two binary raters. NaN when expected agreement is 1.
+
+    Used for model-grader vs human-audit agreement on E1 leak labels (paper
+    9.1). Returning NaN rather than 1.0 when both raters are constant matters:
+    two graders who both say "no leak" every time have not shown agreement,
+    they have shown the sample had no leaks in it.
+    """
+    if len(a) != len(b):
+        raise ValueError("kappa needs paired labels")
+    n = len(a)
+    if n == 0:
+        return float("nan")
+    po = sum(x == y for x, y in zip(a, b)) / n
+    pa, pb = sum(a) / n, sum(b) / n
+    pe = pa * pb + (1 - pa) * (1 - pb)
+    if abs(1 - pe) < 1e-12:
+        return float("nan")
+    return (po - pe) / (1 - pe)
+
+
+def paired_sign_test(a: Sequence[float], b: Sequence[float]) -> dict:
+    """Exact sign test on per-scene paired values: is a > b more often than not?
+
+    Ties are dropped (conservative). The scene is the unit, so n is scenes.
+    """
+    if len(a) != len(b):
+        raise ValueError("paired test needs one value per condition per scene")
+    diffs = [x - y for x, y in zip(a, b)]
+    above = sum(1 for d in diffs if d > 0)
+    below = sum(1 for d in diffs if d < 0)
+    used = above + below
+    return {"a_greater": above, "b_greater": below, "ties": len(diffs) - used,
+            "n_scenes": len(diffs),
+            "p": binomial_p(above, used, 0.5) if used else 1.0}
+
+
+def bootstrap_mean_ci(values: Sequence[float], *, reps: int = 2000,
+                      alpha: float = 0.05, seed: int = 0) -> tuple[float, float, float]:
+    """Mean with a percentile bootstrap CI. Pass one value per scene."""
+    import random as _random
+    vals = list(values)
+    if not vals:
+        return (float("nan"),) * 3
+    point = sum(vals) / len(vals)
+    if len(vals) < 2:
+        return (point, float("nan"), float("nan"))
+    rng = _random.Random(seed)
+    draws = sorted(sum(rng.choice(vals) for _ in vals) / len(vals) for _ in range(reps))
+    return (point, draws[int((alpha / 2) * reps)],
+            draws[min(int((1 - alpha / 2) * reps), reps - 1)])
+
+
+def censored_half_life(half_life: int | None, turns: int) -> int:
+    """Half-life with 'never converged' censored at turns + 1.
+
+    For summaries only (restricted means, paired tests). A scene that never
+    converged held for at least the whole scene; coding it as turns + 1 is the
+    conservative lower bound, whereas dropping it would discard exactly the
+    scenes where the walls worked. Always report `n_never_converged` alongside.
+    """
+    return turns + 1 if half_life is None else half_life
 
 
 def cohens_h(p1: float, p2: float) -> float:

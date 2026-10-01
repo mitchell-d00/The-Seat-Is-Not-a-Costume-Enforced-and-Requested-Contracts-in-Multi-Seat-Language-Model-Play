@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from ._seeding import stable_int
 from .backends import Backend
 from .contracts import Seat
 from .instruments import Instrument
@@ -38,6 +39,12 @@ class SceneConfig:
     contested_proposition: str = "the section records a single rapid event"
 
 
+def seat_seed(scene_seed: int, turn: int, seat_id: str) -> int:
+    """Generation seed for one seat's turn. Shared with `ceiling.SeparatedBench`
+    so the two runners are comparable call for call."""
+    return scene_seed * 10_000 + turn * 10 + stable_int(seat_id, mod=10)
+
+
 @dataclass
 class SceneResult:
     transcript: Transcript
@@ -46,6 +53,8 @@ class SceneResult:
     routing_bleed: list[tuple[int, str, str]] = field(default_factory=list)
     disclosed: set[str] = field(default_factory=set)
     config: SceneConfig | None = None
+    # "L0".."L4" for ladder cells, "ceiling" for ceiling.SeparatedBench.
+    condition: str = ""
 
     def scoring_probes(self) -> list[ProbeResult]:
         """Probes that belong in the leak rate: disclosed facts excluded."""
@@ -93,18 +102,13 @@ class Bench:
 
     def run(self, cfg: SceneConfig) -> SceneResult:
         transcript = self._seed_transcript(cfg)
-        result = SceneResult(transcript=transcript, config=cfg)
+        result = SceneResult(transcript=transcript, config=cfg,
+                             condition=cfg.level.label)
         disclosed: set[str] = set()
 
         for turn in range(1, cfg.turns + 1):
             for seat in self.seats:
                 view = assemble_view(transcript, seat, cfg.level, turn)
-                result.views.append(view)
-
-                # At L3/L4 a populated leaked_spans is a defect in ladder.py.
-                if cfg.level.enforced and view.leaked_spans:
-                    for fid in view.leaked_spans:
-                        result.routing_bleed.append((turn, seat.seat_id, fid))
 
                 inst = self.instruments.get(seat.seat_id)
                 if cfg.use_instruments and inst is not None:
@@ -114,12 +118,21 @@ class Bench:
                     inst.emit(transcript, out, self.seat_ids, cfg.level)
                     view = assemble_view(transcript, seat, cfg.level, turn)
 
+                # Record and check the view that is actually sent. Checking the
+                # pre-instrument view would miss a mis-routed instrument span on
+                # the final turn, where no later view exists to catch it.
+                result.views.append(view)
+                # At L3/L4 a populated leaked_spans is a defect in ladder.py.
+                if cfg.level.enforced and view.leaked_spans:
+                    for fid in view.leaked_spans:
+                        result.routing_bleed.append((turn, seat.seat_id, fid))
+
                 prompt = (f"{view.text}\n\n[your turn {turn}] "
                           f"Say one or two sentences. Take a position on whether "
                           f"{cfg.contested_proposition}.")
                 comp = self.backend.generate(
                     prompt, temperature=cfg.temperature,
-                    seed=cfg.seed * 10_000 + turn * 10 + hash(seat.seat_id) % 10,
+                    seed=seat_seed(cfg.seed, turn, seat.seat_id),
                 )
                 utterance = comp.text.strip()
 

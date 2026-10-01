@@ -35,6 +35,7 @@ import os
 import random
 import re
 import time
+from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Protocol
@@ -61,6 +62,8 @@ class Completion:
     prompt_tokens: int
     prompt_words: int = 0
     raw_usage: dict[str, Any] = field(default_factory=dict)
+    # Parameters the provider rejected and the adapter dropped for this call.
+    dropped_params: tuple[str, ...] = ()
 
 
 class Backend(Protocol):
@@ -191,6 +194,19 @@ class BackendError(RuntimeError):
     pass
 
 
+# Every parameter an adapter drops after a provider rejects it, counted by
+# "provider:model:param". Paper 9.5: a run in which some cells silently used a
+# different temperature is worse than one that crashed, so substitutions are
+# recorded, and the experiment scripts copy this into every results file.
+SUBSTITUTIONS: Counter = Counter()
+
+
+def _record_drop(label: str, params: list[str]) -> tuple[str, ...]:
+    for p in params:
+        SUBSTITUTIONS[f"{label}:{p}"] += 1
+    return tuple(params)
+
+
 def _require_key(env_names: tuple[str, ...], explicit: str | None,
                  provider: str) -> str:
     if explicit:
@@ -282,6 +298,7 @@ class _OpenAICompatible:
             # do not describe cross-run results as reproducible on this basis.
             kwargs["seed"] = seed
 
+        dropped: tuple[str, ...] = ()
         try:
             resp = _retry(lambda: self._client.chat.completions.create(**kwargs),
                           provider=self.name)
@@ -291,19 +308,20 @@ class _OpenAICompatible:
             # multi-thousand-call run over a parameter name.
             msg = str(exc).lower()
             retried = dict(kwargs)
-            changed = False
+            changed: list[str] = []
             if "max_tokens" in msg or "max_completion_tokens" in msg:
                 retried.pop("max_tokens", None)
                 retried["max_completion_tokens"] = max_tokens
-                changed = True
+                changed.append("max_tokens->max_completion_tokens")
             if "temperature" in msg:
                 retried.pop("temperature", None)
-                changed = True
-            if "seed" in msg:
+                changed.append("temperature")
+            if "seed" in msg and "seed" in retried:
                 retried.pop("seed", None)
-                changed = True
+                changed.append("seed")
             if not changed:
                 raise
+            dropped = _record_drop(f"{self.name}:{self.model}", changed)
             resp = _retry(lambda: self._client.chat.completions.create(**retried),
                           provider=self.name)
 
@@ -318,7 +336,7 @@ class _OpenAICompatible:
             raw = {}
         return Completion(text=text, backend=f"{self.name}:{self.model}",
                           prompt_tokens=pt, prompt_words=len(prompt.split()),
-                          raw_usage=raw)
+                          raw_usage=raw, dropped_params=dropped)
 
 
 class OpenAIBackend(_OpenAICompatible):
@@ -439,6 +457,7 @@ class GeminiBackend:
                 if seed is None or "seed" not in str(exc).lower():
                     raise
                 cfg.pop("seed")
+                _record_drop(f"{self.name}:{self.model}", ["seed"])
                 resp = _retry(call, provider=self.name)
         else:
             gen_cfg = {"temperature": temperature, "max_output_tokens": max_tokens}
@@ -502,7 +521,9 @@ class CachedBackend:
         if path.exists():
             try:
                 self.hits += 1
-                return Completion(**json.loads(path.read_text()))
+                d = json.loads(path.read_text())
+                d["dropped_params"] = tuple(d.get("dropped_params", ()))
+                return Completion(**d)
             except Exception:
                 self.hits -= 1
                 path.unlink(missing_ok=True)   # corrupt entry; refetch
@@ -515,6 +536,7 @@ class CachedBackend:
                 "prompt_tokens": comp.prompt_tokens,
                 "prompt_words": comp.prompt_words,
                 "raw_usage": comp.raw_usage,
+                "dropped_params": list(comp.dropped_params),
             }))
         return comp
 
