@@ -192,3 +192,36 @@ def test_cohens_h_sign_and_zero():
 def test_survival_scores():
     s = survival([True, True, False, False], post_reseed_leak=0.25)
     assert s.convention_survival == 0.5 and s.constraint_survival == 0.75
+
+
+# -- added with the review fixes -------------------------------------------
+
+from seatkit import cohens_kappa, paired_sign_test  # noqa: E402
+from seatkit.metrics import bootstrap_mean_ci, censored_half_life  # noqa: E402
+
+
+def test_cohens_kappa_known_value():
+    a = [True, True, False, False, True, False, True, False]
+    b = [True, False, False, False, True, False, True, True]
+    assert cohens_kappa(a, b) == pytest.approx(0.5)
+
+
+def test_kappa_is_nan_when_both_raters_are_constant():
+    """All-negative agreement is not evidence of agreement."""
+    assert math.isnan(cohens_kappa([False] * 5, [False] * 5))
+
+
+def test_paired_sign_test_counts_scenes_and_drops_ties():
+    r = paired_sign_test([3, 3, 3, 1], [1, 1, 3, 2])
+    assert (r["a_greater"], r["b_greater"], r["ties"], r["n_scenes"]) == (2, 1, 1, 4)
+    assert 0 < r["p"] <= 1
+
+
+def test_censored_half_life_codes_never_as_beyond_scene():
+    assert censored_half_life(None, 24) == 25
+    assert censored_half_life(7, 24) == 7
+
+
+def test_bootstrap_mean_ci_brackets_mean():
+    m, lo, hi = bootstrap_mean_ci([1, 2, 3, 4, 5])
+    assert lo <= m <= hi and m == 3

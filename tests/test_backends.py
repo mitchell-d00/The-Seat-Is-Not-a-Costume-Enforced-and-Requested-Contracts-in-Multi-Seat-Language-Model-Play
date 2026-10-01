@@ -137,9 +137,26 @@ def test_openai_backend_retries_without_rejected_parameter(monkeypatch):
     cap = []
     b = _openai_like(OpenAIBackend, monkeypatch, cap,
                      fail_with="Unsupported value: 'temperature' is not supported")
+    from seatkit.backends import SUBSTITUTIONS
+    before = SUBSTITUTIONS["openai:m:temperature"]
     c = b.generate("hello", temperature=0.2)
     assert c.text == "hi"
     assert "temperature" in cap[0] and "temperature" not in cap[1]
+    # Paper 9.5: the substitution is recorded, not smoothed over.
+    assert c.dropped_params == ("temperature",)
+    assert SUBSTITUTIONS["openai:m:temperature"] == before + 1
+
+
+def test_cache_preserves_dropped_params(tmp_path):
+    class Inner:
+        name, model = "x", "m"
+
+        def generate(self, prompt, **kw):
+            return Completion("t", "x:m", 1, 1, {}, ("seed",))
+    cb = CachedBackend(Inner(), cache_dir=tmp_path)
+    cb.generate("p", seed=1)
+    assert cb.generate("p", seed=1).dropped_params == ("seed",)
+    assert cb.hits == 1
 
 
 def test_openai_backend_does_not_swallow_real_errors(monkeypatch):

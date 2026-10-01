@@ -1,11 +1,15 @@
-"""The paper's central claim as a unit test.
+"""The architectural half of the paper's central claim, as a unit test.
 
 At L0-L2 the forbidden fact is in the seat's view and the wall is a request.
 At L3-L4 it is not in the view at all and there is nothing to request.
 
-If `test_enforced_view_excludes_forbidden_fact` ever fails, the paper's
-"unavoidable full availability (enforced)" kill condition has fired for this
-implementation, and `ladder.py` is where to look.
+This verifies the implementation, not the behaviour. If
+`test_enforced_view_excludes_forbidden_fact` fails, `ladder.py` has a routing
+bug: a deterministic defect, fixed once. It does NOT mean the "unavoidable full
+availability (enforced)" kill condition has fired. That condition is
+behavioural - L3/L4 leak above the prior-bleed floor on a live model - and only
+E1 against the ceiling cell can test it. See also tests/test_ceiling.py, which
+checks L3 against an implementation that never calls the projection.
 """
 import sys
 from pathlib import Path
