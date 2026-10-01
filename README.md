@@ -14,7 +14,7 @@ A prohibition implemented in view assembly is **enforced**. The forbidden tokens
 
 These are not two strengths of one dial. They are different objects with different failure modes. Most multi-persona work is requested, most of its failures are compliance failures, and most of its proposed fixes are more paragraphs.
 
-The claim is a unit test:
+The architectural half of the claim is a unit test:
 
 ```python
 view = assemble_view(transcript, geo_seat, Level.REQUESTED, turn=1)
@@ -24,7 +24,7 @@ view = assemble_view(transcript, geo_seat, Level.PARTITIONED, turn=1)
 assert not view.contains(forbidden_fact.value)  # the wall is a projection
 ```
 
-See `tests/test_ladder.py`.
+See `tests/test_ladder.py`. That test verifies the implementation, not the behaviour: a failure there is a routing bug in `ladder.py`. Whether a live model at L3 actually leaks no more than the prior-bleed floor is an empirical question, and only E1 against the ceiling cell can answer it.
 
 ## The enforcement ladder
 
@@ -44,7 +44,7 @@ The jump that matters is **L2 → L3**. Below it, ignorance is a behaviour. At a
 git clone <this repo> && cd seat-contracts
 pip install -e .            # core, no dependencies
 pip install -e ".[live]"    # + openai, anthropic, google-genai
-pytest                      # 86 tests, no API key, under a second
+pytest                      # 149 tests, no API key, about two seconds
 ```
 
 Python 3.10+. The core library has no dependencies. Provider SDKs are needed only for live runs, `pytest` only for tests. Every test runs offline; provider adapters are covered by injecting fake clients.
@@ -83,13 +83,36 @@ python experiments/e3_instrument_symmetry.py --backend mock --scenes 40
 python experiments/e4_externalization.py     --backend mock --scenes 40
 ```
 
-Live runs take any provider spec, and the experimental logic does not change:
+Live runs take any provider spec, and the experimental logic does not change. E1–E3 also need a **judge**: one model, from a family not under test, that does the paraphrase pass, attribution, leak grading, and stance scoring.
+
+### The judge
+
+The judge is configured once, in `experiments/configs/judge.json`: the model, temperature, settings, and pass thresholds. Its prompts live in `src/seatkit/judges.py` under a version number. Together these produce a **fingerprint** that every results file records, so two runs used the same judge only if their fingerprints match.
+
+Before a judge scores data it has to pass `experiments/judge_check.py`, which runs it on the known-answer items in `configs/judge_gold.json` (clear leaks and non-leaks, clear stances, two distinct voices, hedged sentences with numbers). The pass is saved under `results/judge_checks/<fingerprint>.json`, and E1–E3 report whether a passing check exists for the judge they used. A judge that always gives the same answer fails, and that's tested.
+
+`--judge-backend rule` selects an offline rule-based judge that speaks the same prompt formats. It exercises the whole judge path without a key and passes the gold check, but it is a stand-in and is refused for live data.
+
+### The lock
+
+`docs/PREREGISTRATION.lock` records hashes of the protocol, every config (including the judge and its gold set), and all code. The repository ships a **draft** lock as a baseline. Results under it are marked exploratory, and `freeze_prereg.py --check` lists everything that has changed since.
 
 ```bash
-python experiments/preflight.py --backends openai:<model> anthropic:<model> gemini:<model>
-./experiments/run_cross_family.sh openai:<model> anthropic:<model> grok:<model>
+# 1. decide: experiments/configs/prereg.json (P8 margin, P6 at L1)
+#            experiments/configs/judge.json  ("model": "<provider:model>")
+python experiments/judge_check.py                 # 2. qualify the judge
+python experiments/freeze_prereg.py --force       # 3. final lock (refuses while anything is unset)
+python experiments/freeze_prereg.py --check       # 4. before every session
+python experiments/preflight.py --backends openai:<model> anthropic:<model>
+./experiments/run_cross_family.sh openai:<model> anthropic:<model>
 python experiments/compare_families.py results/
+# after hand-labelling the 'human' column of each e1_audit.jsonl:
+python experiments/grader_agreement.py results/<family>/e1_audit.jsonl
 ```
+
+`run_cross_family.sh` takes the judge from `judge.json`; `JUDGE=<provider:model>` overrides it. E1–E3 refuse a live backend without a model judge. The offline stand-ins (a hedge-stripping regex, a bag-of-words judge, lexical similarity) bias E2 toward the paper's own hypothesis, so `--allow-standin-judge` is required to run them live, and the results file says so.
+
+Every results file records the seatkit version, the judges used, any provider parameter that was dropped, and whether the code and protocol matched `docs/PREREGISTRATION.lock`.
 
 | Spec | Key | SDK |
 |---|---|---|
@@ -119,15 +142,19 @@ python experiments/compare_families.py results/
 Prior bleed sets a floor no wall can cross, which is why every experiment runs against two reference conditions and reports results as position between them:
 
 - **Floor:** L0, shared window. The worst case.
-- **Ceiling:** two seats in genuinely separate processes, no shared history. Estimates prior bleed and bounds what any wall can achieve.
+- **Ceiling:** two seats in genuinely separate processes, no shared history (`seatkit.ceiling.SeparatedBench`). Estimates prior bleed and bounds what any wall can achieve.
 
-`metrics.normalize` enforces this. When floor and ceiling coincide it returns NaN rather than a number, because "walls can buy nothing here" must not read as zero.
+`metrics.normalize` computes the position. When floor and ceiling coincide it returns NaN rather than a number, because "walls can buy nothing here" must not read as zero.
+
+**What the ceiling is, for stateless APIs.** Every provider adapter here is stateless, and for a stateless API an ideal L3 projection and the ceiling hand the model the *same prompt*. `SeparatedBench` never calls the projection code, so `tests/test_ceiling.py` uses that equality as a differential test of `ladder.py`. The ceiling's empirical jobs are to estimate prior bleed and to give the floor-to-ceiling span (P11). An L3 cell that differs from the ceiling by more than sampling noise indicates an assembly defect. L3 and the ceiling genuinely diverge only when seats share server-side state: thread APIs, provider memory, or a shared retrieval layer.
 
 ## What the mock backend can and cannot show
 
 `MockBackend` is deterministic, runs offline, and needs no key. It uses a forbidden fact only when that fact's value appears in the prompt it was handed, and never invents one. Prior bleed is therefore exactly zero, which means **any nonzero L3/L4 leak in a mock run is a routing bug in `ladder.py` and nothing else**. That is what makes it a useful regression harness.
 
-It cannot do the other half. Its L0 > L1 > L2 leak ordering is *stipulated by three constants in the constructor*, not discovered. Its two seats draw from disjoint canned vocabularies, so E2's judge sits at ceiling and E3's seats never converge — the scripts print explicit warnings when this happens rather than reporting the numbers as findings.
+It cannot do the other half. Its L0 > L1 > L2 leak ordering is *stipulated by three constants in the constructor*, not discovered. Its two seats draw from disjoint canned vocabularies, so E2's judge sits at ceiling and E3's seats almost never converge. It only uses values written in its setup format, so E4's post-reseed probe never leaks on it. The scripts print explicit warnings in these cases rather than reporting the numbers as findings, and every mock results file carries a notice saying so.
+
+It is reproducible across processes: seeds are derived with CRC32, not Python's per-process salted `hash()`. That also makes the response cache hit on reruns.
 
 **No number produced by the mock belongs in a results table.** Paper §9.5 requires a live backend on at least two model families — which is what the provider adapters are for. `preflight.py` will tell you how many distinct families you actually have keys for, and `compare_families.py` refuses to pool them, because pooling averages away exactly the disagreement the comparison exists to find.
 
@@ -137,6 +164,8 @@ It cannot do the other half. Its L0 > L1 > L2 leak ordering is *stipulated by th
 paper/          the paper (md, pdf, txt)
 src/seatkit/
   ladder.py     the admissibility operator. the module the paper is about
+  ceiling.py    the ceiling reference: seats in separate processes, independent of ladder.py
+  judges.py     the judge panel: paraphrase, attribution, leak grading, stance; fingerprint; rule stand-in
   contracts.py  five clauses: needs, synergies, forbidden, instrument, externalize
   transcript.py provenance-tagged spans; without tags there is nothing to filter on
   bench.py      scene orchestration, disclosure tracking, bench-capture check
@@ -145,9 +174,11 @@ src/seatkit/
   backends.py   mock, openai, anthropic, grok, gemini, disk cache
   metrics.py    leak rates, attribution, convergence, half-life, BH, effect sizes
   artifacts.py  seat sheets and the three reseeding conditions
-experiments/    E1–E4, preflight, cross-family runner, family comparison
-tests/          86 tests. test_ladder.py is the paper's central claim
-docs/           enforcement ladder, protocol, backends, preregistration
+experiments/    E1–E4, preflight, cross-family runner, family comparison,
+                judge_check.py, freeze_prereg.py, grader_agreement.py, _common.py (shared setup)
+  configs/      default.yaml, judge.json, judge_gold.json, prereg.json (decisions to make)
+tests/          149 tests. test_ladder.py is the architectural claim; test_ceiling.py checks it independently
+docs/           enforcement ladder, protocol, backends, preregistration, changelogs
 ```
 
 ## The scene is the unit of independence
@@ -166,7 +197,9 @@ A practical tell: if your n looks like `scenes × turns × seats`, something got
 
 ## Status
 
-Reference implementation for a single-author paper. The predictions in §9 have not been run against live models; the harness is what makes running them possible. Negative results are mapped to kill conditions in `docs/PREREGISTRATION.md` in advance, so a failed prediction cannot be reinterpreted afterwards as a partial success.
+Reference implementation for a single-author paper. The predictions in §9 have not been run against live models; the harness is what makes running them possible. Negative results are mapped to kill conditions in `docs/PREREGISTRATION.md` in advance, so a failed prediction cannot be reinterpreted afterwards as a partial success. Freeze the preregistration with `experiments/freeze_prereg.py` before collecting data.
+
+Known gaps between the harness and §9 are listed in [`docs/CHANGES-review-fixes.md`](docs/CHANGES-review-fixes.md#still-open-decisions-for-the-author-not-bugs). The main ones: the L1 half of P6 is untestable as implemented (nothing can be private below L3), E4 phase 2 has the leak probe but not the 8-turn continuation, and the P8 equivalence margin is not yet set.
 
 ## Licence
 
