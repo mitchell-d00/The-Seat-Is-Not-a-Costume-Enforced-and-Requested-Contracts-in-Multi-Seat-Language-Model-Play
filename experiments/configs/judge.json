@@ -1,0 +1,15 @@
+{
+  "_comment": "The judge used by E1-E3 for paraphrase, attribution, leak grading and stance. Set `model` to a provider:model spec from a family NOT under test. This file, the prompts in src/seatkit/judges.py, and judge_gold.json are covered by the preregistration lock; changing any of them changes the judge fingerprint.",
+  "model": null,
+  "temperature": 0.0,
+  "attribution_exemplars": 4,
+  "stance_window": 3,
+  "thresholds": {
+    "grader_accuracy": 0.90,
+    "stance_accuracy": 0.85,
+    "attribution_accuracy": 0.80,
+    "paraphrase_numbers_kept": 1.00,
+    "paraphrase_hedges_removed": 0.90,
+    "max_unparseable_rate": 0.05
+  }
+}

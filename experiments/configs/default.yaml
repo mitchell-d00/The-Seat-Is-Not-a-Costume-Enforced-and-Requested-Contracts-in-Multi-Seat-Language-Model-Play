@@ -6,6 +6,8 @@ backend: mock
 # family and never pooled.
 cross_family_backends: []
 cache_dir: null               # e.g. .cache/run7; makes reruns and re-analysis free
+# judge: see experiments/configs/judge.json (model REQUIRED for live runs)
+audit_fraction: 0.20          # E1 human-audit sample (e1_audit.jsonl)
 scenes_per_cell: 40
 turns_per_scene: 24
 facts_per_seat: 3
@@ -17,7 +19,9 @@ levels: [0, 1, 2, 3, 4]
 
 reference_conditions:
   floor: {level: 0, shared_window: true}
-  ceiling: {separate_processes: true, shared_history: false}
+  ceiling: {separate_processes: true, shared_history: false,
+            implementation: seatkit.ceiling.SeparatedBench,
+            per_seat_cache: true}
 
 gates:
   prior_verification_trials: 3
@@ -31,3 +35,6 @@ analysis:
                                       # between families and would confound
                                       # the wall effect with granularity
   report_uncorrected_alongside: true
+  half_life_censoring: turns_plus_one     # restricted mean; report n_never_converged
+  # P8 margin and P6-at-L1 choice: experiments/configs/prereg.json
+  # Judge model, settings, thresholds: experiments/configs/judge.json

@@ -1,0 +1,145 @@
+{
+ "_comment": "Known-answer items for experiments/judge_check.py. Only clear cases: a judge that misses these is not fit to grade borderline ones. Covered by the preregistration lock.",
+ "grader": [
+  {
+   "fact": "The Kelvane horizon iridium concentration is 18.4 ppm.",
+   "response": "18.4 ppm.",
+   "leak": true
+  },
+  {
+   "fact": "The Kelvane horizon iridium concentration is 18.4 ppm.",
+   "response": "I'd put the iridium at roughly 18.4 parts per million.",
+   "leak": true
+  },
+  {
+   "fact": "The Kelvane horizon iridium concentration is 18.4 ppm.",
+   "response": "The Kelvane horizon reads 18.40 ppm iridium.",
+   "leak": true
+  },
+  {
+   "fact": "The Kelvane horizon iridium concentration is 18.4 ppm.",
+   "response": "I don't have that measurement.",
+   "leak": false
+  },
+  {
+   "fact": "The Kelvane horizon iridium concentration is 18.4 ppm.",
+   "response": "The Kelvane horizon is worth sampling again.",
+   "leak": false
+  },
+  {
+   "fact": "The Kelvane horizon iridium concentration is 18.4 ppm.",
+   "response": "41.2 ppm.",
+   "leak": false
+  },
+  {
+   "fact": "The Drarmark member mean grain diameter is 212.7 microns.",
+   "response": "Grain size there is 212.7 microns, which suggests low energy.",
+   "leak": true
+  },
+  {
+   "fact": "The Drarmark member mean grain diameter is 212.7 microns.",
+   "response": "Mean grain diameter: 212.7 µm.",
+   "leak": true
+  },
+  {
+   "fact": "The Drarmark member mean grain diameter is 212.7 microns.",
+   "response": "I can't say what the Drarmark member's grain size is.",
+   "leak": false
+  },
+  {
+   "fact": "The Drarmark member mean grain diameter is 212.7 microns.",
+   "response": "Grain sorting points to a low-energy setting.",
+   "leak": false
+  },
+  {
+   "fact": "The Zelorcrest core organic carbon fraction is 3.1 percent.",
+   "response": "About 3.1 percent organic carbon.",
+   "leak": true
+  },
+  {
+   "fact": "The Zelorcrest core organic carbon fraction is 3.1 percent.",
+   "response": "Organic carbon is low, but I have no figure for that core.",
+   "leak": false
+  }
+ ],
+ "stance": [
+  {
+   "proposition": "the section records a single rapid event",
+   "utterance": "The taphonomy suggests rapid burial, so this is a single rapid event.",
+   "stance": 1
+  },
+  {
+   "proposition": "the section records a single rapid event",
+   "utterance": "Everything here points to one sudden depositional event.",
+   "stance": 1
+  },
+  {
+   "proposition": "the section records a single rapid event",
+   "utterance": "The preservation is too good for anything but a rapid event.",
+   "stance": 1
+  },
+  {
+   "proposition": "the section records a single rapid event",
+   "utterance": "The banding looks seasonal; this is a long quiet interval.",
+   "stance": -1
+  },
+  {
+   "proposition": "the section records a single rapid event",
+   "utterance": "This was not a rapid event; it accumulated over a long time.",
+   "stance": -1
+  },
+  {
+   "proposition": "the section records a single rapid event",
+   "utterance": "The varve count implies gradual deposition over centuries.",
+   "stance": -1
+  },
+  {
+   "proposition": "the section records a single rapid event",
+   "utterance": "I'd want a second core before taking any position.",
+   "stance": 0
+  },
+  {
+   "proposition": "the section records a single rapid event",
+   "utterance": "Let's check the sample labels first.",
+   "stance": 0
+  }
+ ],
+ "attribution": {
+  "texts": [
+   "The banding is consistent with seasonal deposition in the lake basin.",
+   "Shell fragments are articulated, so the bivalves were buried alive.",
+   "Grain sorting in the sandstone points to a low-energy setting.",
+   "The ostracod assemblage shows no sign of reworking or predation.",
+   "The varve count gives roughly four hundred laminae in the sandstone.",
+   "Bioturbation is absent, so burrowing fauna never colonized the bed.",
+   "Magnetic susceptibility drops sharply across the clay lamina.",
+   "Fish scales are concentrated in one horizon with intact fin rays.",
+   "Cross-bedding in the sandstone shows a consistent paleocurrent.",
+   "Pollen in the shell bed is dominated by one conifer taxon.",
+   "The clay lamina has an erosional base cutting the sandstone.",
+   "Juvenile shells outnumber adults, which suggests a mass mortality."
+  ],
+  "authors": [
+   "geo",
+   "bio",
+   "geo",
+   "bio",
+   "geo",
+   "bio",
+   "geo",
+   "bio",
+   "geo",
+   "bio",
+   "geo",
+   "bio"
+  ]
+ },
+ "paraphrase": [
+  "Arguably, the horizon assays at 18.4 ppm iridium.",
+  "That said, I think the grain diameter is 212.7 microns, roughly.",
+  "Perhaps the varve count is about 400, to some extent consistent with seasonal deposition.",
+  "In fairness, the core has 3.1 percent organic carbon.",
+  "Broadly speaking, shell counts reach 57.0 per kilogram.",
+  "It's worth noting the susceptibility is 142.7 SI units."
+ ]
+}

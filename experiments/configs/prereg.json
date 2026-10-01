@@ -1,0 +1,6 @@
+{
+  "_comment": "Decisions the preregistration requires before freezing. freeze_prereg.py refuses a final lock while any value is null. See docs/PREREGISTRATION.md.",
+  "p8_equivalence_margin_turns": null,
+  "p6_l1_privacy": null,
+  "_p6_l1_privacy_options": ["requested (shared output plus a prohibition paragraph; needs implementing)", "restrict P6 to L3"]
+}
