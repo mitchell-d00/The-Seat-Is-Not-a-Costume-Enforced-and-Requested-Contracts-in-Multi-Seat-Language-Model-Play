@@ -216,6 +216,8 @@ Every experiment runs in all cells against two reference conditions:
 
 Results reported as raw scores are not interpretable. Results are reported as position between floor and ceiling.
 
+One property of the ceiling should be stated rather than discovered. When the serving API is stateless, as every provider interface used here is, an ideal L3 projection and the ceiling hand the model the same prompt: the framing, the seat's own facts, its own instrument's notes, and everything said aloud. On such backends the ceiling has three jobs. It estimates prior bleed. It fixes the floor-to-ceiling span that the prior-bleed-dominance condition (§10) is about. And, implemented without the projection code, it is an independent check on that code: an L3 cell that departs from the ceiling by more than sampling noise is reporting an assembly defect, not a behaviour. It follows that E1's prediction 2, on stateless backends, mostly tests implementation correctness. Its behavioural force is in deployments where seats share state the prompt does not show, such as thread APIs, provider memory features, or a shared retrieval layer.
+
 ## 9.1 E1 — Leak probe: measuring bleed independently
 
 The original label-stripped test was circular: it defined seats as holding if attribution succeeded, then predicted attribution would succeed when seats held. E1 exists so that bleed has a measure that does not mention attribution.
@@ -314,7 +316,7 @@ The original prediction compared contracted seats against "a fresh costume given
 
 ## 9.5 Analysis and reporting
 
-- **Preregistration.** Thresholds, exclusions, and the prior-verification gate are fixed before data collection. The repository ships a preregistration document (`docs/PREREGISTRATION.md`) with timestamps.
+- **Preregistration.** Thresholds, exclusions, and the prior-verification gate are fixed before data collection. The repository ships a preregistration document (`docs/PREREGISTRATION.md`) and a script that freezes it before data collection, recording SHA-256 hashes of the protocol and all analysis code with the time and commit. Every results file records whether it ran against the frozen tree. That record is self-attested, so the digest is also deposited with a third party for an independent timestamp.
 - **The scene is the unit of independence.** A scene yields dozens of attribution judgements, and they are not independent observations: they share seats, forbidden facts, and a single drift trajectory. Inference is therefore at the scene level throughout, using per-scene rates, confidence intervals from resampling whole scenes, and within-scene pairing for the surface-versus-content contrast. Pooling turn-level judgements into one test is not a venial simplification; in simulation at a within-scene correlation of 0.2 it rejects a true null roughly 57% of the time against a nominal 5%, which would make the attribution result a table of significant nothings. Reported $n$ is always the number of scenes.
 
 - **Effect sizes.** Report standardized differences with confidence intervals. With $n = 40$ scenes per cell and multiple comparisons across a five-level ladder, $p$-values alone will mislead.
