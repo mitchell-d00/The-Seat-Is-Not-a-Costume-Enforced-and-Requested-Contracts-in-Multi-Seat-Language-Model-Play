@@ -1,94 +1,49 @@
 """E2 - Label-stripped attribution, made non-circular (paper 9.2).
 
 Two judges. The surface judge sees raw text and may use style. The content judge
-sees text after a register-normalizing paraphrase pass and may use only what was
-claimed. If attribution succeeds for the surface judge and fails for the content
-judge, the costume was doing the work and the contract was not. That contrast is
-the paper's most direct test of its own thesis.
+sees text after a register-normalizing paraphrase pass by a separate model and
+may use only what was claimed. If attribution succeeds for the surface judge and
+fails for the content judge, the costume was doing the work and the contract was
+not. That contrast is the paper's most direct test of its own thesis.
 
 The primary analysis is a regression of content-judge accuracy on E1 leak rate:
 two independently measured quantities, which is what the original prediction
 lacked.
 
+Judges (seatkit.judges):
+  --judge-backend <provider:model>  model paraphrase + model attribution reader
+  omitted, with --backend mock      regex paraphrase + lexical centroid stand-ins
+
+A live --backend with stand-in judges is refused unless --allow-standin-judge
+is passed, because the regex paraphraser keeps syntax and word choice and so
+overstates content-judge accuracy - a bias in the hypothesis's favour.
+
 Usage:
     python experiments/e2_attribution.py --backend mock --scenes 40
+    python experiments/e2_attribution.py --backend anthropic:<model> \\
+        --judge-backend openai:<model> --cache .cache/run1
 """
 from __future__ import annotations
 
-import argparse, json, random, re, sys
-from collections import Counter
+import argparse, random, sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _common import (add_common_args, build_pair, ceiling_bench, header,  # noqa: E402
+                     judge_record, ladder_bench, resolve_judge, write)
 
-from seatkit import (Bench, Instrument, Level, Origin, SceneConfig,
-                     facing_pair, family_of, get_backend, leak_rates,
-                     make_facts)
-from seatkit.metrics import (_content_vector, binomial_p,
-                             cluster_bootstrap_ci, cosine,
-                             paired_cluster_diff,
-                             sign_test_over_clusters)
+from seatkit import (CEILING, Level, Origin, SceneConfig, get_backend,  # noqa: E402
+                     leak_rates, normalize)
+from seatkit.judges import LexicalCentroidJudge, RegexParaphraser  # noqa: E402
+from seatkit.metrics import (binomial_p, cluster_bootstrap_ci,  # noqa: E402
+                             paired_cluster_diff, sign_test_over_clusters)
 
 LEVELS = [Level.COSTUME, Level.REQUESTED, Level.REMINDED,
           Level.PARTITIONED, Level.ISOLATED]
-
-HEDGE_STRIP = re.compile(
-    r"\b(arguably|roughly|somewhat|perhaps|broadly speaking|that said|"
-    r"it may be|to some extent|in fairness|it's worth noting)\b,?\s*",
-    re.IGNORECASE)
+LATE_TURN = 16   # P5: at L0, content accuracy at chance by this turn
 
 
-def normalize_register(text: str) -> str:
-    """Stand-in for the paraphrase pass that strips style but keeps content.
-
-    In a live run this is a separate model instructed to preserve propositional
-    content and neutralize register. Here it removes hedges and lowercases, which
-    is enough to demonstrate the contrast; a real run must use the model pass,
-    because a regex cannot remove syntactic fingerprints and will therefore
-    overstate content-judge accuracy.
-    """
-    return HEDGE_STRIP.sub("", text).lower().strip()
-
-
-def judge(spans, seats, content_only: bool, rng):
-    """Leave-one-out nearest-centroid attribution over content words.
-
-    For each turn, build each seat's centroid from that seat's *other* turns and
-    assign the turn to the nearest. This is what a held-out reader does: decide
-    which speaker a turn belongs with, given the rest of the transcript. Leaving
-    the turn itself out of its own centroid is what keeps the measure honest.
-
-    The surface judge sees raw text. The content judge sees register-normalized
-    text, so it can use claims but not style. The gap between them is the
-    measurement: style differences without knowledge differences mean the
-    costume was doing the work.
-    """
-    docs = [((normalize_register(sp.text) if content_only else sp.text.lower()),
-             sp.author) for sp in spans]
-    vecs = [_content_vector(t) for t, _ in docs]
-    ids = [s.seat_id for s in seats]
-
-    totals = {sid: Counter() for sid in ids}
-    for (_, author), v in zip(docs, vecs):
-        totals[author].update(v)
-
-    out = []
-    for i, (_, author) in enumerate(docs):
-        scores = {}
-        for sid in ids:
-            cent = totals[sid].copy()
-            if author == sid:
-                cent.subtract(vecs[i])          # leave one out
-                cent = Counter({k: v for k, v in cent.items() if v > 0})
-            scores[sid] = cosine(vecs[i], cent)
-        best = max(scores.values())
-        winners = [sid for sid, v in scores.items() if v == best]
-        pred = rng.choice(winners) if len(winners) > 1 else winners[0]
-        out.append((pred, author))
-    return out
-
-
-def run_cell(level, backend, scenes, turns, rng):
+def run_cell(cell, args, backend, judge, paraphrase, rng):
     """Return per-scene results. The scene is the unit of independence.
 
     Flattening turns into one list was the original mistake: 40 scenes of 48
@@ -97,82 +52,111 @@ def run_cell(level, backend, scenes, turns, rng):
     (see docs/protocol.md).
     """
     per_scene = []
-    for i in range(scenes):
-        a, b = make_facts(3, seed=1000 + i, prefix="a"), make_facts(3, seed=5000 + i, prefix="b")
-        geo, bio = facing_pair(
-            "geo", "bio", a, b,
-            a_extra={"persona": "a geologist", "needs": ("protect the rapid-event reading",)},
-            b_extra={"persona": "a paleobiologist", "needs": ("protect the quiet-interval reading",)},
-        )
-        instruments = {s.seat_id: Instrument(host=s, backend=backend) for s in (geo, bio)}
-        res = Bench([geo, bio], backend, instruments).run(
-            SceneConfig(turns=turns, level=level, seed=i))
+    for i in range(args.scenes):
+        geo, bio = build_pair(i)
+        cfg = SceneConfig(turns=args.turns, seed=i,
+                          level=Level.PARTITIONED if cell == CEILING else cell)
+        bench = (ceiling_bench((geo, bio), args.backend, args.cache)
+                 if cell == CEILING else ladder_bench((geo, bio), backend))
+        res = bench.run(cfg)
         spoken = [sp for sp in res.transcript if sp.origin is Origin.SEAT]
+        authors = [sp.author for sp in spoken]
+        turns = [sp.turn for sp in spoken]
+        ids = ("geo", "bio")
 
-        surf = [pred == true for pred, true in
-                judge(spoken, [geo, bio], content_only=False, rng=rng)]
-        cont = [pred == true for pred, true in
-                judge(spoken, [geo, bio], content_only=True, rng=rng)]
-        rates = leak_rates(res.scoring_probes())
-        per_scene.append({"surface": surf, "content": cont,
-                          "leak": rates.elicited})
+        surf = [p == t for p, t in judge.judge([sp.text for sp in spoken],
+                                               authors, ids, rng)]
+        cont = [p == t for p, t in judge.judge([paraphrase(sp.text) for sp in spoken],
+                                               authors, ids, rng)]
+        per_scene.append({
+            "surface": surf, "content": cont,
+            "surface_late": [c for c, t in zip(surf, turns) if t >= LATE_TURN],
+            "content_late": [c for c, t in zip(cont, turns) if t >= LATE_TURN],
+            "leak": leak_rates(res.scoring_probes()).elicited,
+        })
     return per_scene
+
+
+def summarize(per_scene):
+    surf_cl = [s["surface"] for s in per_scene]
+    cont_cl = [s["content"] for s in per_scene]
+    point, lo, hi = cluster_bootstrap_ci(cont_cl, seed=0)
+    s_point, s_lo, s_hi = cluster_bootstrap_ci(surf_cl, seed=0)
+    above, n_used, sign_p = sign_test_over_clusters(cont_cl, 0.5)
+    paired = paired_cluster_diff(surf_cl, cont_cl, seed=0)
+    n_turns = sum(len(c) for c in cont_cl)
+    late = {}
+    for which in ("surface", "content"):
+        cl = [s[f"{which}_late"] for s in per_scene if s[f"{which}_late"]]
+        pt, l, h = cluster_bootstrap_ci(cl, seed=0) if cl else (float("nan"),) * 3
+        a, u, p = sign_test_over_clusters(cl, 0.5) if cl else (0, 0, 1.0)
+        late[which] = {"accuracy": round(pt, 4), "ci95": [round(l, 4), round(h, 4)],
+                       "sign_test": {"scenes_above_chance": a, "n": u, "p": round(p, 6)}}
+    return {
+        "n_scenes": len(per_scene),
+        "n_turn_judgements": n_turns,
+        "surface_accuracy": round(s_point, 4),
+        "surface_ci95": [round(s_lo, 4), round(s_hi, 4)],
+        "content_accuracy": round(point, 4),
+        "content_ci95": [round(lo, 4), round(hi, 4)],
+        "content_sign_test": {"scenes_above_chance": above, "n": n_used,
+                              "p": round(sign_p, 6)},
+        "surface_minus_content": {k: (round(v, 4) if isinstance(v, float) else v)
+                                  for k, v in paired.items()},
+        f"turns_ge_{LATE_TURN}": late,
+        "elicited_leak_rate": round(sum(s["leak"] for s in per_scene) / len(per_scene), 4),
+        # Retained only to show what the pooled test would have claimed.
+        # Not used for any inference.
+        "naive_pooled_p_DO_NOT_USE": round(
+            binomial_p(round(point * n_turns), n_turns, 0.5), 8),
+    }
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--backend", default="mock",
-                    help="mock | openai:<model> | anthropic:<model> | "
-                         "grok:<model> | gemini:<model>")
-    ap.add_argument("--cache", default=None,
-                    help="directory for the response cache; omit to disable")
-    ap.add_argument("--scenes", type=int, default=40)
-    ap.add_argument("--turns", type=int, default=24)
+    add_common_args(ap, judges=True)
     ap.add_argument("--out", default="results/e2.json")
     args = ap.parse_args()
 
+    # Judges first: a misconfigured run should fail before any client exists.
+    panel = resolve_judge(args)
     backend = get_backend(args.backend, cache=args.cache or False)
+    if panel is None:
+        judge, paraphrase = LexicalCentroidJudge(), RegexParaphraser()
+    else:
+        judge, paraphrase = panel.attribution, panel.paraphrase
     rng = random.Random(0)
-    out = {"backend": args.backend, "family": family_of(args.backend),
-           "scenes": args.scenes, "cells": {}}
+
+    out = header(args, "E2")
+    out["judges"] = {"attribution": judge.name, "paraphrase": paraphrase.name,
+                     "standin": judge.is_standin or paraphrase.is_standin}
+    out["cells"] = {}
     xs, ys = [], []
 
-    for level in LEVELS:
-        per_scene = run_cell(level, backend, args.scenes, args.turns, rng)
-        surf_cl = [s["surface"] for s in per_scene]
-        cont_cl = [s["content"] for s in per_scene]
+    for cell in LEVELS + [CEILING]:
+        label = cell if cell == CEILING else cell.label
+        per_scene = run_cell(cell, args, backend, judge, paraphrase, rng)
+        c = out["cells"][label] = summarize(per_scene)
+        # Scene-level points for the primary regression; ladder cells only.
+        # Pairs are kept together, so a scene with no judgements drops out of
+        # both axes rather than misaligning them.
+        if cell != CEILING:
+            for s in per_scene:
+                if s["content"]:
+                    xs.append(s["leak"])
+                    ys.append(sum(s["content"]) / len(s["content"]))
+        print(f"{label:>7} surface={c['surface_accuracy']:.3f} "
+              f"content={c['content_accuracy']:.3f} {c['content_ci95']} "
+              f"sign_p={c['content_sign_test']['p']:.4f} "
+              f"leak={c['elicited_leak_rate']:.3f}")
 
-        point, lo, hi = cluster_bootstrap_ci(cont_cl, seed=0)
-        s_point, s_lo, s_hi = cluster_bootstrap_ci(surf_cl, seed=0)
-        above, n_used, sign_p = sign_test_over_clusters(cont_cl, 0.5)
-        paired = paired_cluster_diff(surf_cl, cont_cl, seed=0)
-        mean_leak = sum(s["leak"] for s in per_scene) / len(per_scene)
-
-        n_turns = sum(len(c) for c in cont_cl)
-        out["cells"][level.label] = {
-            "n_scenes": len(per_scene),
-            "n_turn_judgements": n_turns,
-            "surface_accuracy": round(s_point, 4),
-            "surface_ci95": [round(s_lo, 4), round(s_hi, 4)],
-            "content_accuracy": round(point, 4),
-            "content_ci95": [round(lo, 4), round(hi, 4)],
-            "content_sign_test": {"scenes_above_chance": above, "n": n_used,
-                                  "p": round(sign_p, 6)},
-            "surface_minus_content": {k: (round(v, 4) if isinstance(v, float) else v)
-                                      for k, v in paired.items()},
-            "elicited_leak_rate": round(mean_leak, 4),
-            # Retained only to show what the pooled test would have claimed.
-            # Not used for any inference.
-            "naive_pooled_p_DO_NOT_USE": round(
-                binomial_p(round(point * n_turns), n_turns, 0.5), 8),
-        }
-        xs += [s["leak"] for s in per_scene]
-        ys += [sum(c) / len(c) for c in cont_cl if c]
-        print(f"{level.label:>3} surface={s_point:.3f} content={point:.3f} "
-              f"[{lo:.3f},{hi:.3f}] sign_p={sign_p:.4f} leak={mean_leak:.3f}")
+    cells = out["cells"]
+    out["positions_content_accuracy"] = {
+        lbl: normalize(cells[lbl]["content_accuracy"], cells["L0"]["content_accuracy"],
+                       cells[CEILING]["content_accuracy"]).as_dict()
+        for lbl in ("L1", "L2", "L3", "L4")}
 
     # Primary analysis: content accuracy on leak rate, at the SCENE level.
-    # Regressing over five cell means would have left three degrees of freedom.
     n = len(xs)
     mx, my = sum(xs) / n, sum(ys) / n
     den = sum((x - mx) ** 2 for x in xs)
@@ -185,31 +169,36 @@ def main():
                 "framework's central empirical claim.",
     }
     print(f"\nslope(content accuracy ~ leak rate) = "
-          f"{out['regression']['slope_content_accuracy_on_leak_rate']} "
-          f"over {n} scenes")
+          f"{out['regression']['slope_content_accuracy_on_leak_rate']} over {n} scenes")
 
-    # Ceiling check. The mock's two seats draw from disjoint canned vocabularies,
-    # so they are separable by construction and never genuinely converge. When
-    # every cell sits near 1.0 the experiment has not been run, whatever the
-    # numbers say. Flag it rather than tuning the mock until the table looks
-    # right, which would be fabricating the result.
-    accs = [c["content_accuracy"] for c in out["cells"].values()]
+    late0 = cells["L0"][f"turns_ge_{LATE_TURN}"]
+    print(f"P5 at L0, turns >= {LATE_TURN}: surface={late0['surface']['accuracy']} "
+          f"content={late0['content']['accuracy']}")
+
+    out["judge_unparseable"] = judge.unparseable + paraphrase.unparseable
+    out["judge"] = judge_record(panel, args)
+    if out["judges"]["standin"]:
+        out["standin_warning"] = ("Stand-in judges. The regex paraphraser keeps "
+                                  "syntax and word choice, so content accuracy is "
+                                  "overstated. Not valid for the E2 contrast.")
+        print("\n[warning] " + out["standin_warning"])
+
+    # Ceiling check. When every cell sits near 1.0 the experiment has not been
+    # run, whatever the numbers say. Flag it rather than tuning the mock until
+    # the table looks right, which would be fabricating the result.
+    accs = [c["content_accuracy"] for c in cells.values()]
     if min(accs) > 0.95:
         out["ceiling_warning"] = (
             "All cells above 0.95. Judge is at ceiling and cannot discriminate. "
-            "Expected with --backend mock; E2 requires a live backend."
-        )
-        print("\n[warning] " + out["ceiling_warning"])
+            "Expected with --backend mock; E2 requires a live backend.")
+        print("[warning] " + out["ceiling_warning"])
     if max(accs) < 0.6:
         out["floor_warning"] = (
             "All cells near chance. Judge has no signal to recover; check that "
-            "seats are producing knowledge-differentiated content at all."
-        )
-        print("\n[warning] " + out["floor_warning"])
+            "seats are producing knowledge-differentiated content at all.")
+        print("[warning] " + out["floor_warning"])
 
-    Path(args.out).parent.mkdir(parents=True, exist_ok=True)
-    Path(args.out).write_text(json.dumps(out, indent=2))
-    print(f"wrote {args.out}")
+    write(out, args.out)
     return 0
 
 

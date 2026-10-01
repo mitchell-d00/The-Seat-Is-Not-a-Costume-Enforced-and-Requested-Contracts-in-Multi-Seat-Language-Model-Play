@@ -14,6 +14,8 @@ import json
 import sys
 from pathlib import Path
 
+COLS = ("L0", "L1", "L2", "L3", "L4", "ceiling")
+
 
 def load(root: Path) -> list[dict]:
     rows = []
@@ -26,9 +28,15 @@ def load(root: Path) -> list[dict]:
             "scenes": d.get("scenes"),
             "gate": d.get("prior_gate", "?"),
         }
-        for lvl in ("L0", "L1", "L2", "L3", "L4"):
+        for lvl in COLS:
             row[lvl] = cells.get(lvl, {}).get("elicited_leak_rate")
             row[lvl + "_routing"] = cells.get(lvl, {}).get("routing_bleed")
+        row["positions"] = {k: v.get("position")
+                            for k, v in d.get("positions_elicited", {}).items()}
+        pre = d.get("preregistration", {})
+        row["prereg"] = ("frozen" if pre.get("locked") and not pre.get("changed_since_freeze")
+                         else "NOT FROZEN")
+        row["scoring"] = d.get("leak_scoring", "?")
         rows.append(row)
     return rows
 
@@ -41,22 +49,34 @@ def main() -> int:
         return 1
 
     hdr = f"{'backend':<30}{'family':<12}{'gate':<6}" + "".join(
-        f"{l:>8}" for l in ("L0", "L1", "L2", "L3", "L4"))
+        f"{l:>9}" for l in COLS)
     print("\nE1 elicited leak rate by enforcement level\n")
     print(hdr)
     print("-" * len(hdr))
     for r in rows:
         vals = "".join(
-            f"{r[l]:>8.3f}" if isinstance(r[l], (int, float)) else f"{'-':>8}"
-            for l in ("L0", "L1", "L2", "L3", "L4"))
+            f"{r[l]:>9.3f}" if isinstance(r[l], (int, float)) else f"{'-':>9}"
+            for l in COLS)
         print(f"{r['backend']:<30}{r['family']:<12}{r['gate']:<6}{vals}")
+
+    print("\nposition between floor (L0) and ceiling (0 = floor, 1 = ceiling)\n")
+    for r in rows:
+        pos = "  ".join(f"{k}={v if v is not None else 'NaN'}"
+                        for k, v in r["positions"].items()) or "-"
+        print(f"{r['backend']:<30}{pos}")
 
     print("\nchecks")
     for r in rows:
         notes = []
         if r["gate"] != "pass":
             notes.append("prior gate did not pass - leak numbers unreadable")
-        bad = [l for l in ("L3", "L4") if (r.get(l + "_routing") or 0) > 0]
+        if r["prereg"] != "frozen":
+            notes.append("preregistration not frozen for this run - exploratory")
+        if "exact-match-only" in str(r["scoring"]):
+            notes.append("no paraphrase grader - leak rate undercounted")
+        if r.get("ceiling") is None:
+            notes.append("no ceiling cell - positions cannot be computed")
+        bad = [l for l in ("L3", "L4", "ceiling") if (r.get(l + "_routing") or 0) > 0]
         if bad:
             notes.append(f"routing bleed at {', '.join(bad)} - fix ladder.py, rerun")
         l1, l3 = r.get("L1"), r.get("L3")
