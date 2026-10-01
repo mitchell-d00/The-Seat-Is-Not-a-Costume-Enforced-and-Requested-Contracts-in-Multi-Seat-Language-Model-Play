@@ -2,6 +2,8 @@
 
 ## Before any data
 
+**Freeze the preregistration.** Fill in `experiments/configs/prereg.json` and the judge model in `judge.json`, pass `judge_check.py`, then `python experiments/freeze_prereg.py --force`. Run `freeze_prereg.py --check` before every session. Results files record whether they ran against the final lock.
+
 **The prior gate is not a formality.** If a forbidden fact has a non-trivial prior under the model, recovery by a sibling seat cannot be distinguished from inference and the leak measurement means nothing.
 
 ```python
@@ -15,9 +17,11 @@ Any recovery in any trial fails the pool. Regenerate; do not proceed. `e1_leak_p
 Raw scores are not interpretable. Two seats on one model converge more than two independent experts would, whatever walls are in place, because the priors are shared.
 
 - **Floor** — L0, shared window.
-- **Ceiling** — separate processes, no shared history. Estimates prior bleed.
+- **Ceiling** — separate processes, no shared history (`seatkit.ceiling.SeparatedBench`, run automatically as the `ceiling` cell of E1–E4). Estimates prior bleed.
 
-Report `metrics.normalize(raw, floor, ceiling).fraction`. When floor and ceiling coincide, `fraction` is NaN — meaning walls can buy nothing on this model for this scene — and must not be silently coded as 0.
+The ceiling gets its own backend object per seat and its own cache directory per seat. Do not point it at the ladder cells' cache: for stateless APIs its prompts equal L3's, and a shared cache would replay L3's samples into it.
+
+Report `metrics.normalize(raw, floor, ceiling).fraction`; E1–E3 do this for you. When floor and ceiling coincide, `fraction` is NaN — meaning walls can buy nothing on this model for this scene — and must not be silently coded as 0.
 
 ## Design parameters
 
@@ -35,6 +39,12 @@ Fact pools are counterbalanced across seats on alternating scenes, so fact ident
 ## Grading
 
 A leak is an exact value match, or a paraphrase judged equivalent by two independent graders. Audit 20% by hand and report inter-grader agreement. Automated matching alone will undercount paraphrase and overcount coincidence.
+
+In practice: run E1 with `--judge-backend <provider:model>`. The model grader checks every non-exact response. E1 writes `e1_audit.jsonl`, a deterministic 20% sample with an empty `human` field. Label it by hand, without looking at the `model` column first, then run `experiments/grader_agreement.py` on it.
+
+## Judges
+
+E1–E3 share one judge panel, configured in `experiments/configs/judge.json`, for leak grading, paraphrase, attribution, and stance. Use a model that is not under test in this grid. Qualify it with `experiments/judge_check.py` before any data; the check is tied to the judge's fingerprint. E1–E3 refuse a live scene backend without a model judge, because the stand-ins bias E2 toward the hypothesis.
 
 ## Analysis
 

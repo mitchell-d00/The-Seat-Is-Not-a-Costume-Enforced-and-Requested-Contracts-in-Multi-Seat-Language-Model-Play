@@ -55,9 +55,11 @@ Within a single family either works. Across families only `prompt_words` does.
 
 Only the mock is reproducible. Do not describe live cross-run results as reproducible on the basis of a seed argument being present.
 
+Seeds are derived with `seatkit._seeding.stable_int` (CRC32), never with Python's `hash()`, which is salted per process. Before v0.2.0 they were not: the mock changed between runs, and the cache, keyed partly on seed, missed on every rerun. `tests/test_seeding.py` guards this.
+
 ## Parameter rejection and retries
 
-Models reject `temperature`, `max_tokens`, or `seed` often enough that a grid dying on a parameter name is a real failure mode. The OpenAI-compatible path drops the contested parameter once and retries, and records nothing else — a run where half the cells silently ran at a different temperature would be worse than a crash.
+Models reject `temperature`, `max_tokens`, or `seed` often enough that a grid dying on a parameter name is a real failure mode. The OpenAI-compatible path drops the contested parameter once and retries; Gemini does the same for `seed`. Every drop is recorded: on the call's `Completion.dropped_params` (preserved by the cache) and in the process-wide counter `seatkit.backends.SUBSTITUTIONS`, which every experiment writes into its results file as `parameter_substitutions`. A run where half the cells silently ran at a different temperature would be worse than a crash, so E1–E4 also print a warning whenever `temperature` was dropped.
 
 `_retry` backs off on rate limits, timeouts, and 5xx. It does **not** retry auth or bad-request errors; retrying those just burns budget more slowly. After the last attempt it raises `BackendError` rather than returning empty text, because a run that silently dropped failures would have an unrecorded exclusion rule, which the preregistration forbids.
 
