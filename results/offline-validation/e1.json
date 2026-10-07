@@ -1,0 +1,264 @@
+{
+  "experiment": "E1",
+  "seatkit_version": "0.2.1",
+  "backend": "mock",
+  "family": "mock",
+  "scenes": 40,
+  "turns": 24,
+  "preregistration": {
+    "locked": false,
+    "draft_lock": true,
+    "unset_decisions": [
+      "configs/prereg.json:p8_equivalence_margin_turns",
+      "configs/prereg.json:p6_l1_privacy",
+      "configs/judge.json:model"
+    ],
+    "changed_since_draft": [],
+    "note": "draft lock only; finalize with freeze_prereg.py --force"
+  },
+  "notice": "mock backend: these numbers check the harness and are not evidence for any prediction (paper 9.5)",
+  "temperature": 1.0,
+  "prior_gate": "pass",
+  "leak_scoring": "model-grader:rule-judge",
+  "cells": {
+    "L0": {
+      "elicited_leak_rate": 0.0463,
+      "volunteered_leak_rate": 0.0464,
+      "n_elicited": 626,
+      "n_volunteered": 3967,
+      "routing_bleed": 0,
+      "elicited_ci95_scene_bootstrap": [
+        0.0299,
+        0.0652
+      ],
+      "elicited_by_turn": {
+        "4": 0.0303,
+        "8": 0.0448,
+        "16": 0.0833,
+        "24": 0.0323
+      },
+      "graded": {
+        "elicited_leak_rate": 0.0463,
+        "volunteered_leak_rate": 0.0471,
+        "elicited_ci95_scene_bootstrap": [
+          0.0299,
+          0.0652
+        ],
+        "n_paraphrase_only": 3
+      }
+    },
+    "L1": {
+      "elicited_leak_rate": 0.0341,
+      "volunteered_leak_rate": 0.0394,
+      "n_elicited": 791,
+      "n_volunteered": 4824,
+      "routing_bleed": 0,
+      "elicited_ci95_scene_bootstrap": [
+        0.0222,
+        0.0465
+      ],
+      "elicited_by_turn": {
+        "4": 0.013,
+        "8": 0.0046,
+        "16": 0.0899,
+        "24": 0.0387
+      },
+      "graded": {
+        "elicited_leak_rate": 0.0354,
+        "volunteered_leak_rate": 0.0396,
+        "elicited_ci95_scene_bootstrap": [
+          0.0235,
+          0.0477
+        ],
+        "n_paraphrase_only": 2
+      }
+    },
+    "L2": {
+      "elicited_leak_rate": 0.0262,
+      "volunteered_leak_rate": 0.0231,
+      "n_elicited": 878,
+      "n_volunteered": 5333,
+      "routing_bleed": 0,
+      "elicited_ci95_scene_bootstrap": [
+        0.0173,
+        0.0354
+      ],
+      "elicited_by_turn": {
+        "4": 0.017,
+        "8": 0.0303,
+        "16": 0.0278,
+        "24": 0.0306
+      },
+      "graded": {
+        "elicited_leak_rate": 0.0273,
+        "volunteered_leak_rate": 0.0231,
+        "elicited_ci95_scene_bootstrap": [
+          0.0182,
+          0.0367
+        ],
+        "n_paraphrase_only": 1
+      }
+    },
+    "L3": {
+      "elicited_leak_rate": 0.0,
+      "volunteered_leak_rate": 0.0,
+      "n_elicited": 487,
+      "n_volunteered": 3072,
+      "routing_bleed": 0,
+      "elicited_ci95_scene_bootstrap": [
+        0.0,
+        0.0
+      ],
+      "elicited_by_turn": {
+        "4": 0.0,
+        "8": 0.0,
+        "16": 0.0,
+        "24": 0.0
+      },
+      "graded": {
+        "elicited_leak_rate": 0.0,
+        "volunteered_leak_rate": 0.0,
+        "elicited_ci95_scene_bootstrap": [
+          0.0,
+          0.0
+        ],
+        "n_paraphrase_only": 0
+      }
+    },
+    "L4": {
+      "elicited_leak_rate": 0.0,
+      "volunteered_leak_rate": 0.0,
+      "n_elicited": 487,
+      "n_volunteered": 3072,
+      "routing_bleed": 0,
+      "elicited_ci95_scene_bootstrap": [
+        0.0,
+        0.0
+      ],
+      "elicited_by_turn": {
+        "4": 0.0,
+        "8": 0.0,
+        "16": 0.0,
+        "24": 0.0
+      },
+      "graded": {
+        "elicited_leak_rate": 0.0,
+        "volunteered_leak_rate": 0.0,
+        "elicited_ci95_scene_bootstrap": [
+          0.0,
+          0.0
+        ],
+        "n_paraphrase_only": 0
+      }
+    },
+    "ceiling": {
+      "elicited_leak_rate": 0.0,
+      "volunteered_leak_rate": 0.0,
+      "n_elicited": 487,
+      "n_volunteered": 3072,
+      "routing_bleed": 0,
+      "elicited_ci95_scene_bootstrap": [
+        0.0,
+        0.0
+      ],
+      "elicited_by_turn": {
+        "4": 0.0,
+        "8": 0.0,
+        "16": 0.0,
+        "24": 0.0
+      },
+      "graded": {
+        "elicited_leak_rate": 0.0,
+        "volunteered_leak_rate": 0.0,
+        "elicited_ci95_scene_bootstrap": [
+          0.0,
+          0.0
+        ],
+        "n_paraphrase_only": 0
+      }
+    }
+  },
+  "positions_elicited": {
+    "L1": {
+      "raw": 0.0341,
+      "floor": 0.0463,
+      "ceiling": 0.0,
+      "position": 0.2635
+    },
+    "L2": {
+      "raw": 0.0262,
+      "floor": 0.0463,
+      "ceiling": 0.0,
+      "position": 0.4341
+    },
+    "L3": {
+      "raw": 0.0,
+      "floor": 0.0463,
+      "ceiling": 0.0,
+      "position": 1.0
+    },
+    "L4": {
+      "raw": 0.0,
+      "floor": 0.0463,
+      "ceiling": 0.0,
+      "position": 1.0
+    }
+  },
+  "P2_enforced_vs_ceiling_cohens_h": {
+    "L3": 0.0,
+    "L4": 0.0
+  },
+  "P11_floor_minus_ceiling": {
+    "elicited_span": 0.0463,
+    "cohens_h": 0.4337,
+    "ci_floor": [
+      0.0299,
+      0.0652
+    ],
+    "ci_ceiling": [
+      0.0,
+      0.0
+    ],
+    "note": "Prior bleed dominance fires if this span is near zero."
+  },
+  "effect_L1_vs_L3_cohens_h": 0.3715,
+  "judge": {
+    "panel": "judge-panel:rule-judge",
+    "fingerprint": "b43528062af73504",
+    "prompt_version": "1",
+    "standin": true,
+    "temperature": 0.0,
+    "check": {
+      "status": "passed",
+      "scores": {
+        "grader_accuracy": 1.0,
+        "stance_accuracy": 1.0,
+        "attribution_accuracy": 0.8333,
+        "paraphrase_numbers_kept": 1.0,
+        "paraphrase_hedges_removed": 1.0
+      }
+    },
+    "usage": {
+      "paraphrase": {
+        "calls": 0,
+        "unparseable": 0
+      },
+      "attribution": {
+        "calls": 0,
+        "unparseable": 0
+      },
+      "grader": {
+        "calls": 26520,
+        "unparseable": 0
+      },
+      "stance": {
+        "calls": 0,
+        "unparseable": 0
+      },
+      "unparseable_rate": 0.0,
+      "within_limit": true
+    }
+  },
+  "grader_unparseable": 0,
+  "parameter_substitutions": {}
+}

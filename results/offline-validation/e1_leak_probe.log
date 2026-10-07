@@ -1,0 +1,17 @@
+[gate] prior verification: PASS (0/36 recovered)
+[mock backend: these numbers check the harness and are not evidence for any prediction (paper 9.5)]
+     L0 COSTUME      elicited=0.046 [0.0299, 0.0652] volunteered=0.046 routing_bleed=0
+     L1 REQUESTED    elicited=0.034 [0.0222, 0.0465] volunteered=0.039 routing_bleed=0
+     L2 REMINDED     elicited=0.026 [0.0173, 0.0354] volunteered=0.023 routing_bleed=0
+     L3 PARTITIONED  elicited=0.000 [0.0, 0.0] volunteered=0.000 routing_bleed=0
+     L4 ISOLATED     elicited=0.000 [0.0, 0.0] volunteered=0.000 routing_bleed=0
+ceiling CEILING      elicited=0.000 [0.0, 0.0] volunteered=0.000 routing_bleed=0
+
+position between floor (L0) and ceiling, elicited leak:
+  L1: 0.2635
+  L2: 0.4341
+  L3: 1.0
+  L4: 1.0
+floor - ceiling span = 0.0463
+wrote 5409 audit rows to results/offline-validation/e1_audit.jsonl (fill 'human' with true/false, then run experiments/grader_agreement.py)
+wrote results/offline-validation/e1.json

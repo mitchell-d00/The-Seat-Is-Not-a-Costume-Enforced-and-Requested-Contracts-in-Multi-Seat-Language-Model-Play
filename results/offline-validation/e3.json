@@ -1,0 +1,397 @@
+{
+  "experiment": "E3",
+  "seatkit_version": "0.2.1",
+  "backend": "mock",
+  "family": "mock",
+  "scenes": 40,
+  "turns": 24,
+  "preregistration": {
+    "locked": false,
+    "draft_lock": true,
+    "unset_decisions": [
+      "configs/prereg.json:p8_equivalence_margin_turns",
+      "configs/prereg.json:p6_l1_privacy",
+      "configs/judge.json:model"
+    ],
+    "changed_since_draft": [],
+    "note": "draft lock only; finalize with freeze_prereg.py --force"
+  },
+  "notice": "mock backend: these numbers check the harness and are not evidence for any prediction (paper 9.5)",
+  "disagreement_measure": "model-stance:rule-judge",
+  "cells": {
+    "L0_shared": {
+      "restricted_mean_half_life": 6.35,
+      "restricted_mean_ci95": [
+        4.95,
+        7.975
+      ],
+      "censoring": "never-converged coded as 25 (turns + 1)",
+      "median_resolved_half_life": 5,
+      "n_never_converged": 1,
+      "n_scenes": 40,
+      "mean_hedge_index": 4.4243,
+      "incompatibility_curve": {
+        "1": 0.4875,
+        "2": 0.5312,
+        "3": 0.5167,
+        "4": 0.55,
+        "5": 0.5083,
+        "6": 0.4958,
+        "7": 0.4708,
+        "8": 0.4792,
+        "9": 0.4875,
+        "10": 0.5,
+        "11": 0.525,
+        "12": 0.5333,
+        "13": 0.5167,
+        "14": 0.4792,
+        "15": 0.4667,
+        "16": 0.4417,
+        "17": 0.4417,
+        "18": 0.4667,
+        "19": 0.4708,
+        "20": 0.5083,
+        "21": 0.5083,
+        "22": 0.5208,
+        "23": 0.5125,
+        "24": 0.5042
+      }
+    },
+    "L1_shared": {
+      "restricted_mean_half_life": 5.35,
+      "restricted_mean_ci95": [
+        4.0,
+        6.95
+      ],
+      "censoring": "never-converged coded as 25 (turns + 1)",
+      "median_resolved_half_life": 4,
+      "n_never_converged": 1,
+      "n_scenes": 40,
+      "mean_hedge_index": 4.7123,
+      "incompatibility_curve": {
+        "1": 0.5,
+        "2": 0.5,
+        "3": 0.4708,
+        "4": 0.45,
+        "5": 0.4375,
+        "6": 0.4875,
+        "7": 0.4958,
+        "8": 0.4875,
+        "9": 0.475,
+        "10": 0.4875,
+        "11": 0.4917,
+        "12": 0.475,
+        "13": 0.4875,
+        "14": 0.525,
+        "15": 0.525,
+        "16": 0.5125,
+        "17": 0.475,
+        "18": 0.4708,
+        "19": 0.4542,
+        "20": 0.4958,
+        "21": 0.5042,
+        "22": 0.5292,
+        "23": 0.4958,
+        "24": 0.4875
+      }
+    },
+    "L1_private": {
+      "restricted_mean_half_life": 5.35,
+      "restricted_mean_ci95": [
+        4.0,
+        6.95
+      ],
+      "censoring": "never-converged coded as 25 (turns + 1)",
+      "median_resolved_half_life": 4,
+      "n_never_converged": 1,
+      "n_scenes": 40,
+      "mean_hedge_index": 4.7123,
+      "incompatibility_curve": {
+        "1": 0.5,
+        "2": 0.5,
+        "3": 0.4708,
+        "4": 0.45,
+        "5": 0.4375,
+        "6": 0.4875,
+        "7": 0.4958,
+        "8": 0.4875,
+        "9": 0.475,
+        "10": 0.4875,
+        "11": 0.4917,
+        "12": 0.475,
+        "13": 0.4875,
+        "14": 0.525,
+        "15": 0.525,
+        "16": 0.5125,
+        "17": 0.475,
+        "18": 0.4708,
+        "19": 0.4542,
+        "20": 0.4958,
+        "21": 0.5042,
+        "22": 0.5292,
+        "23": 0.4958,
+        "24": 0.4875
+      }
+    },
+    "L3_shared": {
+      "restricted_mean_half_life": 6.175,
+      "restricted_mean_ci95": [
+        4.525,
+        8.0
+      ],
+      "censoring": "never-converged coded as 25 (turns + 1)",
+      "median_resolved_half_life": 5,
+      "n_never_converged": 1,
+      "n_scenes": 40,
+      "mean_hedge_index": 4.6866,
+      "incompatibility_curve": {
+        "1": 0.4625,
+        "2": 0.525,
+        "3": 0.5042,
+        "4": 0.5292,
+        "5": 0.4958,
+        "6": 0.4833,
+        "7": 0.4292,
+        "8": 0.4708,
+        "9": 0.4875,
+        "10": 0.5417,
+        "11": 0.5042,
+        "12": 0.5333,
+        "13": 0.5333,
+        "14": 0.5458,
+        "15": 0.525,
+        "16": 0.55,
+        "17": 0.575,
+        "18": 0.5833,
+        "19": 0.5417,
+        "20": 0.5083,
+        "21": 0.475,
+        "22": 0.4625,
+        "23": 0.475,
+        "24": 0.4958
+      }
+    },
+    "L3_private": {
+      "restricted_mean_half_life": 6.375,
+      "restricted_mean_ci95": [
+        4.4,
+        8.625
+      ],
+      "censoring": "never-converged coded as 25 (turns + 1)",
+      "median_resolved_half_life": 4,
+      "n_never_converged": 2,
+      "n_scenes": 40,
+      "mean_hedge_index": 3.9985,
+      "incompatibility_curve": {
+        "1": 0.4125,
+        "2": 0.4688,
+        "3": 0.4667,
+        "4": 0.4917,
+        "5": 0.4708,
+        "6": 0.4875,
+        "7": 0.4833,
+        "8": 0.4875,
+        "9": 0.4875,
+        "10": 0.525,
+        "11": 0.5375,
+        "12": 0.5417,
+        "13": 0.525,
+        "14": 0.5375,
+        "15": 0.5083,
+        "16": 0.5167,
+        "17": 0.5042,
+        "18": 0.5167,
+        "19": 0.4958,
+        "20": 0.4875,
+        "21": 0.5125,
+        "22": 0.5,
+        "23": 0.525,
+        "24": 0.4917
+      }
+    },
+    "L3_private_swapped": {
+      "restricted_mean_half_life": 6.9,
+      "restricted_mean_ci95": [
+        5.55,
+        8.3
+      ],
+      "censoring": "never-converged coded as 25 (turns + 1)",
+      "median_resolved_half_life": 7,
+      "n_never_converged": 0,
+      "n_scenes": 40,
+      "mean_hedge_index": 3.8932,
+      "incompatibility_curve": {
+        "1": 0.525,
+        "2": 0.4688,
+        "3": 0.4792,
+        "4": 0.4625,
+        "5": 0.5,
+        "6": 0.4958,
+        "7": 0.5042,
+        "8": 0.4917,
+        "9": 0.5083,
+        "10": 0.475,
+        "11": 0.4667,
+        "12": 0.45,
+        "13": 0.475,
+        "14": 0.4833,
+        "15": 0.4583,
+        "16": 0.5,
+        "17": 0.5167,
+        "18": 0.575,
+        "19": 0.5417,
+        "20": 0.525,
+        "21": 0.4875,
+        "22": 0.475,
+        "23": 0.4917,
+        "24": 0.4958
+      }
+    },
+    "ceiling": {
+      "restricted_mean_half_life": 6.375,
+      "restricted_mean_ci95": [
+        4.4,
+        8.625
+      ],
+      "censoring": "never-converged coded as 25 (turns + 1)",
+      "median_resolved_half_life": 4,
+      "n_never_converged": 2,
+      "n_scenes": 40,
+      "mean_hedge_index": 3.9985,
+      "incompatibility_curve": {
+        "1": 0.4125,
+        "2": 0.4688,
+        "3": 0.4667,
+        "4": 0.4917,
+        "5": 0.4708,
+        "6": 0.4875,
+        "7": 0.4833,
+        "8": 0.4875,
+        "9": 0.4875,
+        "10": 0.525,
+        "11": 0.5375,
+        "12": 0.5417,
+        "13": 0.525,
+        "14": 0.5375,
+        "15": 0.5083,
+        "16": 0.5167,
+        "17": 0.5042,
+        "18": 0.5167,
+        "19": 0.4958,
+        "20": 0.4875,
+        "21": 0.5125,
+        "22": 0.5,
+        "23": 0.525,
+        "24": 0.4917
+      }
+    }
+  },
+  "P6_private_vs_shared": {
+    "L1": {
+      "a_greater": 0,
+      "b_greater": 0,
+      "ties": 40,
+      "n_scenes": 40,
+      "p": 1.0
+    },
+    "L3": {
+      "a_greater": 12,
+      "b_greater": 14,
+      "ties": 14,
+      "n_scenes": 40,
+      "p": 0.8450189828872758
+    }
+  },
+  "P7_hedge_main_effects": {
+    "buffer_sharing (shared - private)": 0.3441,
+    "ladder_level (L1 - L3)": 0.3698,
+    "prediction": "|buffer_sharing| > |ladder_level|",
+    "holds_in_this_run": false
+  },
+  "P8_contract_swap": {
+    "mean_diff_swapped_minus_original": 0.525,
+    "ci95": [
+      -1.95,
+      2.725
+    ],
+    "sign_test": {
+      "a_greater": 24,
+      "b_greater": 15,
+      "ties": 1,
+      "n_scenes": 40,
+      "p": 0.19959086691960706
+    },
+    "equivalence_margin": null,
+    "note": "no margin supplied; P8 is reported, not decided"
+  },
+  "positions_half_life": {
+    "L1_shared": {
+      "raw": 5.35,
+      "floor": 6.35,
+      "ceiling": 6.375,
+      "position": -40.0
+    },
+    "L1_private": {
+      "raw": 5.35,
+      "floor": 6.35,
+      "ceiling": 6.375,
+      "position": -40.0
+    },
+    "L3_shared": {
+      "raw": 6.175,
+      "floor": 6.35,
+      "ceiling": 6.375,
+      "position": -7.0
+    },
+    "L3_private": {
+      "raw": 6.375,
+      "floor": 6.35,
+      "ceiling": 6.375,
+      "position": 1.0
+    }
+  },
+  "P11_ceiling_minus_floor_half_life": 0.025,
+  "P6_L1_identical_by_construction": true,
+  "warnings": [
+    "L1_private and L1_shared are identical: below L3 nothing can be hidden, so the L1 half of P6 is untestable as implemented. See docs/CHANGES-review-fixes.md."
+  ],
+  "judge": {
+    "panel": "judge-panel:rule-judge",
+    "fingerprint": "b43528062af73504",
+    "prompt_version": "1",
+    "standin": true,
+    "temperature": 0.0,
+    "check": {
+      "status": "passed",
+      "scores": {
+        "grader_accuracy": 1.0,
+        "stance_accuracy": 1.0,
+        "attribution_accuracy": 0.8333,
+        "paraphrase_numbers_kept": 1.0,
+        "paraphrase_hedges_removed": 1.0
+      }
+    },
+    "usage": {
+      "paraphrase": {
+        "calls": 0,
+        "unparseable": 0
+      },
+      "attribution": {
+        "calls": 0,
+        "unparseable": 0
+      },
+      "grader": {
+        "calls": 0,
+        "unparseable": 0
+      },
+      "stance": {
+        "calls": 13440,
+        "unparseable": 0
+      },
+      "unparseable_rate": 0.0,
+      "within_limit": true
+    }
+  },
+  "judge_unparseable": 0,
+  "parameter_substitutions": {}
+}

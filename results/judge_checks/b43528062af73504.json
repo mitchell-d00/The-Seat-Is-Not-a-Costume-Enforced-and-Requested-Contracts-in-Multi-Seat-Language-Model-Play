@@ -1,0 +1,43 @@
+{
+  "panel": "judge-panel:rule-judge",
+  "fingerprint": "b43528062af73504",
+  "prompt_version": "1",
+  "standin": true,
+  "temperature": 0.0,
+  "scores": {
+    "grader_accuracy": 1.0,
+    "stance_accuracy": 1.0,
+    "attribution_accuracy": 0.8333,
+    "paraphrase_numbers_kept": 1.0,
+    "paraphrase_hedges_removed": 1.0
+  },
+  "unparseable_rate": 0.0,
+  "thresholds": {
+    "grader_accuracy": 0.9,
+    "stance_accuracy": 0.85,
+    "attribution_accuracy": 0.8,
+    "paraphrase_numbers_kept": 1.0,
+    "paraphrase_hedges_removed": 0.9,
+    "max_unparseable_rate": 0.05
+  },
+  "checks": {
+    "grader_accuracy": true,
+    "stance_accuracy": true,
+    "attribution_accuracy": true,
+    "paraphrase_numbers_kept": true,
+    "paraphrase_hedges_removed": true,
+    "max_unparseable_rate": true
+  },
+  "passed": true,
+  "failures": {
+    "grader": [],
+    "stance": []
+  },
+  "n_items": {
+    "grader": 12,
+    "stance": 8,
+    "attribution": 12,
+    "paraphrase": 6
+  },
+  "spec": "rule"
+}

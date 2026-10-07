@@ -1,0 +1,13 @@
+[mock backend: these numbers check the harness and are not evidence for any prediction (paper 9.5)]
+     L0 surface=0.827 content=0.832 [0.8177, 0.8469] sign_p=0.0000 leak=0.046
+     L1 surface=0.832 content=0.834 [0.8177, 0.85] sign_p=0.0000 leak=0.032
+     L2 surface=0.831 content=0.848 [0.8297, 0.8656] sign_p=0.0000 leak=0.026
+     L3 surface=0.840 content=0.844 [0.8302, 0.8589] sign_p=0.0000 leak=0.000
+     L4 surface=0.839 content=0.851 [0.8359, 0.8656] sign_p=0.0000 leak=0.000
+ceiling surface=0.849 content=0.856 [0.8396, 0.8719] sign_p=0.0000 leak=0.000
+
+slope(content accuracy ~ leak rate) = -0.0033 over 200 scenes
+P5 at L0, turns >= 16: surface=0.8194 content=0.8361
+
+[warning] Stand-in judges. The regex paraphraser keeps syntax and word choice, so content accuracy is overstated. Not valid for the E2 contrast.
+wrote results/offline-validation/e2.json

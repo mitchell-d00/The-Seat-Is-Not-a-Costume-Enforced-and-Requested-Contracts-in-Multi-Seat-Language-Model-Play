@@ -1,0 +1,15 @@
+[mock backend: these numbers check the harness and are not evidence for any prediction (paper 9.5)]
+L0_shared           rmean_half_life=6.35    never_converged=1/40 hedge=4.4243
+L1_shared           rmean_half_life=5.35    never_converged=1/40 hedge=4.7123
+L1_private          rmean_half_life=5.35    never_converged=1/40 hedge=4.7123
+L3_shared           rmean_half_life=6.175   never_converged=1/40 hedge=4.6866
+L3_private          rmean_half_life=6.375   never_converged=2/40 hedge=3.9985
+L3_private_swapped  rmean_half_life=6.9     never_converged=0/40 hedge=3.8932
+ceiling             rmean_half_life=6.375   never_converged=2/40 hedge=3.9985
+
+P6 private vs shared (paired sign test p): L1=1.0000 L3=0.8450
+P7 hedge effects: buffer=0.3441 level=0.3698
+P8 swap diff = 0.525 [-1.95, 2.725]
+P11 ceiling - floor (restricted mean half-life) = 0.025
+[warning] L1_private and L1_shared are identical: below L3 nothing can be hidden, so the L1 half of P6 is untestable as implemented. See docs/CHANGES-review-fixes.md.
+wrote results/offline-validation/e3.json

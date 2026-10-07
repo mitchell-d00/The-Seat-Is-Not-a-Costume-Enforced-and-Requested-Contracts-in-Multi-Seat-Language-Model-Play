@@ -1,0 +1,276 @@
+{
+  "experiment": "E4",
+  "seatkit_version": "0.2.1",
+  "backend": "mock",
+  "family": "mock",
+  "scenes": 40,
+  "turns": 24,
+  "preregistration": {
+    "locked": false,
+    "draft_lock": true,
+    "unset_decisions": [
+      "configs/prereg.json:p8_equivalence_margin_turns",
+      "configs/prereg.json:p6_l1_privacy",
+      "configs/judge.json:model"
+    ],
+    "changed_since_draft": [],
+    "note": "draft lock only; finalize with freeze_prereg.py --force"
+  },
+  "notice": "mock backend: these numbers check the harness and are not evidence for any prediction (paper 9.5)",
+  "measures": {
+    "constraint_survival": "post-reseed elicited probe (primary, paper 9.4)",
+    "constraint_survival_context": "fact present in reseeding context (mechanism)",
+    "convention_survival": "convention present in reseeding context",
+    "not_implemented": [
+      "8-turn phase-2 continuation between reseeded seats",
+      "per-convention probing by question"
+    ]
+  },
+  "by_cell": {
+    "L0": {
+      "conditions": {
+        "none": {
+          "convention_survival": 0.0,
+          "constraint_survival": 1.0,
+          "constraint_survival_context": 1.0,
+          "mean_forbidden_facts_carried": 0.0,
+          "n_scenes": 40
+        },
+        "tail": {
+          "convention_survival": 0.6879,
+          "constraint_survival": 1.0,
+          "constraint_survival_context": 0.5333,
+          "mean_forbidden_facts_carried": 0.575,
+          "n_scenes": 40
+        },
+        "sheet": {
+          "convention_survival": 1.0,
+          "constraint_survival": 1.0,
+          "constraint_survival_context": 0.6083,
+          "mean_forbidden_facts_carried": 0.525,
+          "n_scenes": 40
+        }
+      },
+      "tests": {
+        "P9_conventions_sheet_gt_tail": {
+          "a_greater": 40,
+          "b_greater": 0,
+          "ties": 0,
+          "n_scenes": 40,
+          "p": 1.8189894035458565e-12,
+          "supported": true
+        },
+        "P9_conventions_tail_gt_none": {
+          "a_greater": 40,
+          "b_greater": 0,
+          "ties": 0,
+          "n_scenes": 40,
+          "p": 1.8189894035458565e-12,
+          "supported": true
+        },
+        "P10_constraints_sheet_gt_tail": {
+          "a_greater": 0,
+          "b_greater": 0,
+          "ties": 40,
+          "n_scenes": 40,
+          "p": 1.0,
+          "supported": false
+        },
+        "P10_mechanism_context_sheet_gt_tail": {
+          "a_greater": 6,
+          "b_greater": 4,
+          "ties": 30,
+          "n_scenes": 40,
+          "p": 0.7539062499999989,
+          "supported": false
+        }
+      }
+    },
+    "L1": {
+      "conditions": {
+        "none": {
+          "convention_survival": 0.0,
+          "constraint_survival": 1.0,
+          "constraint_survival_context": 1.0,
+          "mean_forbidden_facts_carried": 0.0,
+          "n_scenes": 40
+        },
+        "tail": {
+          "convention_survival": 0.7266,
+          "constraint_survival": 1.0,
+          "constraint_survival_context": 0.3375,
+          "mean_forbidden_facts_carried": 1.4,
+          "n_scenes": 40
+        },
+        "sheet": {
+          "convention_survival": 1.0,
+          "constraint_survival": 1.0,
+          "constraint_survival_context": 0.5,
+          "mean_forbidden_facts_carried": 1.025,
+          "n_scenes": 40
+        }
+      },
+      "tests": {
+        "P9_conventions_sheet_gt_tail": {
+          "a_greater": 40,
+          "b_greater": 0,
+          "ties": 0,
+          "n_scenes": 40,
+          "p": 1.8189894035458565e-12,
+          "supported": true
+        },
+        "P9_conventions_tail_gt_none": {
+          "a_greater": 40,
+          "b_greater": 0,
+          "ties": 0,
+          "n_scenes": 40,
+          "p": 1.8189894035458565e-12,
+          "supported": true
+        },
+        "P10_constraints_sheet_gt_tail": {
+          "a_greater": 0,
+          "b_greater": 0,
+          "ties": 40,
+          "n_scenes": 40,
+          "p": 1.0,
+          "supported": false
+        },
+        "P10_mechanism_context_sheet_gt_tail": {
+          "a_greater": 16,
+          "b_greater": 2,
+          "ties": 22,
+          "n_scenes": 40,
+          "p": 0.0013122558593749985,
+          "supported": true
+        }
+      }
+    },
+    "L3": {
+      "conditions": {
+        "none": {
+          "convention_survival": 0.0,
+          "constraint_survival": 1.0,
+          "constraint_survival_context": 1.0,
+          "mean_forbidden_facts_carried": 0.0,
+          "n_scenes": 40
+        },
+        "tail": {
+          "convention_survival": 0.7316,
+          "constraint_survival": 1.0,
+          "constraint_survival_context": 0.8125,
+          "mean_forbidden_facts_carried": 0.2,
+          "n_scenes": 40
+        },
+        "sheet": {
+          "convention_survival": 1.0,
+          "constraint_survival": 1.0,
+          "constraint_survival_context": 1.0,
+          "mean_forbidden_facts_carried": 0.0,
+          "n_scenes": 40
+        }
+      },
+      "tests": {
+        "P9_conventions_sheet_gt_tail": {
+          "a_greater": 40,
+          "b_greater": 0,
+          "ties": 0,
+          "n_scenes": 40,
+          "p": 1.8189894035458565e-12,
+          "supported": true
+        },
+        "P9_conventions_tail_gt_none": {
+          "a_greater": 40,
+          "b_greater": 0,
+          "ties": 0,
+          "n_scenes": 40,
+          "p": 1.8189894035458565e-12,
+          "supported": true
+        },
+        "P10_constraints_sheet_gt_tail": {
+          "a_greater": 0,
+          "b_greater": 0,
+          "ties": 40,
+          "n_scenes": 40,
+          "p": 1.0,
+          "supported": false
+        },
+        "P10_mechanism_context_sheet_gt_tail": {
+          "a_greater": 8,
+          "b_greater": 0,
+          "ties": 32,
+          "n_scenes": 40,
+          "p": 0.007812500000000002,
+          "supported": true
+        }
+      }
+    },
+    "ceiling": {
+      "conditions": {
+        "none": {
+          "convention_survival": 0.0,
+          "constraint_survival": 1.0,
+          "constraint_survival_context": 1.0,
+          "mean_forbidden_facts_carried": 0.0,
+          "n_scenes": 40
+        },
+        "tail": {
+          "convention_survival": 0.7316,
+          "constraint_survival": 1.0,
+          "constraint_survival_context": 0.8125,
+          "mean_forbidden_facts_carried": 0.2,
+          "n_scenes": 40
+        },
+        "sheet": {
+          "convention_survival": 1.0,
+          "constraint_survival": 1.0,
+          "constraint_survival_context": 1.0,
+          "mean_forbidden_facts_carried": 0.0,
+          "n_scenes": 40
+        }
+      },
+      "tests": {
+        "P9_conventions_sheet_gt_tail": {
+          "a_greater": 40,
+          "b_greater": 0,
+          "ties": 0,
+          "n_scenes": 40,
+          "p": 1.8189894035458565e-12,
+          "supported": true
+        },
+        "P9_conventions_tail_gt_none": {
+          "a_greater": 40,
+          "b_greater": 0,
+          "ties": 0,
+          "n_scenes": 40,
+          "p": 1.8189894035458565e-12,
+          "supported": true
+        },
+        "P10_constraints_sheet_gt_tail": {
+          "a_greater": 0,
+          "b_greater": 0,
+          "ties": 40,
+          "n_scenes": 40,
+          "p": 1.0,
+          "supported": false
+        },
+        "P10_mechanism_context_sheet_gt_tail": {
+          "a_greater": 8,
+          "b_greater": 0,
+          "ties": 32,
+          "n_scenes": 40,
+          "p": 0.007812500000000002,
+          "supported": true
+        }
+      }
+    }
+  },
+  "findings": [
+    "L0: tail constraint survival 1.000 vs sheet 1.000; P10 not supported (sign test p=1); P9 sheet>tail yes, tail>none yes (mock run: harness check, not evidence)",
+    "L1: tail constraint survival 1.000 vs sheet 1.000; P10 not supported (sign test p=1); P9 sheet>tail yes, tail>none yes (mock run: harness check, not evidence)",
+    "L3: tail constraint survival 1.000 vs sheet 1.000; P10 not supported (sign test p=1); P9 sheet>tail yes, tail>none yes (mock run: harness check, not evidence)",
+    "ceiling: tail constraint survival 1.000 vs sheet 1.000; P10 not supported (sign test p=1); P9 sheet>tail yes, tail>none yes (mock run: harness check, not evidence)",
+    "tail degrades constraint survival at: no cell (mock run: harness check, not evidence)",
+    "sheet reaches full constraint survival at: L0, L1, L3, ceiling (mock run: harness check, not evidence)"
+  ],
+  "parameter_substitutions": {}
+}

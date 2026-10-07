@@ -197,6 +197,13 @@ A practical tell: if your n looks like `scenes × turns × seats`, something got
 
 ## Status
 
+**Offline validation:** all 149 tests and E1–E4 completed at 40 scenes ×
+24 turns with the mock backend and calibrated rule judge. E1 reported zero
+routing bleed and zero mock leakage at L3/L4 and the ceiling. The source layout
+was corrected from `sec/` to `src/`. See [the validation report](docs/OFFLINE-VALIDATION.md)
+and [recorded outputs](results/README.md). These are harness checks, not live-model
+findings; the existing preregistration lock remains draft.
+
 Reference implementation for a single-author paper. The predictions in §9 have not been run against live models; the harness is what makes running them possible. Negative results are mapped to kill conditions in `docs/PREREGISTRATION.md` in advance, so a failed prediction cannot be reinterpreted afterwards as a partial success. Freeze the preregistration with `experiments/freeze_prereg.py` before collecting data.
 
 Known gaps between the harness and §9 are listed in [`docs/CHANGES-review-fixes.md`](docs/CHANGES-review-fixes.md#still-open-decisions-for-the-author-not-bugs). The main ones: the L1 half of P6 is untestable as implemented (nothing can be private below L3), E4 phase 2 has the leak probe but not the 8-turn continuation, and the P8 equivalence margin is not yet set.

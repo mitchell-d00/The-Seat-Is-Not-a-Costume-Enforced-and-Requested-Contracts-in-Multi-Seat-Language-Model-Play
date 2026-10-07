@@ -1,0 +1,423 @@
+{
+  "experiment": "E2",
+  "seatkit_version": "0.2.1",
+  "backend": "mock",
+  "family": "mock",
+  "scenes": 40,
+  "turns": 24,
+  "preregistration": {
+    "locked": false,
+    "draft_lock": true,
+    "unset_decisions": [
+      "configs/prereg.json:p8_equivalence_margin_turns",
+      "configs/prereg.json:p6_l1_privacy",
+      "configs/judge.json:model"
+    ],
+    "changed_since_draft": [],
+    "note": "draft lock only; finalize with freeze_prereg.py --force"
+  },
+  "notice": "mock backend: these numbers check the harness and are not evidence for any prediction (paper 9.5)",
+  "judges": {
+    "attribution": "model-attribution:rule-judge",
+    "paraphrase": "model-paraphrase:rule-judge",
+    "standin": true
+  },
+  "cells": {
+    "L0": {
+      "n_scenes": 40,
+      "n_turn_judgements": 1920,
+      "surface_accuracy": 0.8271,
+      "surface_ci95": [
+        0.8099,
+        0.8448
+      ],
+      "content_accuracy": 0.8318,
+      "content_ci95": [
+        0.8177,
+        0.8469
+      ],
+      "content_sign_test": {
+        "scenes_above_chance": 40,
+        "n": 40,
+        "p": 0.0
+      },
+      "surface_minus_content": {
+        "diff": -0.0047,
+        "lo": -0.0281,
+        "hi": 0.0187,
+        "n": 40,
+        "excludes_zero": false
+      },
+      "turns_ge_16": {
+        "surface": {
+          "accuracy": 0.8194,
+          "ci95": [
+            0.7861,
+            0.8528
+          ],
+          "sign_test": {
+            "scenes_above_chance": 40,
+            "n": 40,
+            "p": 0.0
+          }
+        },
+        "content": {
+          "accuracy": 0.8361,
+          "ci95": [
+            0.8139,
+            0.8597
+          ],
+          "sign_test": {
+            "scenes_above_chance": 40,
+            "n": 40,
+            "p": 0.0
+          }
+        }
+      },
+      "elicited_leak_rate": 0.0461,
+      "naive_pooled_p_DO_NOT_USE": 0.0
+    },
+    "L1": {
+      "n_scenes": 40,
+      "n_turn_judgements": 1920,
+      "surface_accuracy": 0.8323,
+      "surface_ci95": [
+        0.8167,
+        0.8484
+      ],
+      "content_accuracy": 0.8344,
+      "content_ci95": [
+        0.8177,
+        0.85
+      ],
+      "content_sign_test": {
+        "scenes_above_chance": 40,
+        "n": 40,
+        "p": 0.0
+      },
+      "surface_minus_content": {
+        "diff": -0.0021,
+        "lo": -0.0234,
+        "hi": 0.0188,
+        "n": 40,
+        "excludes_zero": false
+      },
+      "turns_ge_16": {
+        "surface": {
+          "accuracy": 0.8292,
+          "ci95": [
+            0.8,
+            0.8583
+          ],
+          "sign_test": {
+            "scenes_above_chance": 40,
+            "n": 40,
+            "p": 0.0
+          }
+        },
+        "content": {
+          "accuracy": 0.8361,
+          "ci95": [
+            0.8083,
+            0.8611
+          ],
+          "sign_test": {
+            "scenes_above_chance": 40,
+            "n": 40,
+            "p": 0.0
+          }
+        }
+      },
+      "elicited_leak_rate": 0.032,
+      "naive_pooled_p_DO_NOT_USE": 0.0
+    },
+    "L2": {
+      "n_scenes": 40,
+      "n_turn_judgements": 1920,
+      "surface_accuracy": 0.8307,
+      "surface_ci95": [
+        0.8172,
+        0.8438
+      ],
+      "content_accuracy": 0.8484,
+      "content_ci95": [
+        0.8297,
+        0.8656
+      ],
+      "content_sign_test": {
+        "scenes_above_chance": 40,
+        "n": 40,
+        "p": 0.0
+      },
+      "surface_minus_content": {
+        "diff": -0.0177,
+        "lo": -0.0411,
+        "hi": 0.0073,
+        "n": 40,
+        "excludes_zero": false
+      },
+      "turns_ge_16": {
+        "surface": {
+          "accuracy": 0.8333,
+          "ci95": [
+            0.8111,
+            0.8542
+          ],
+          "sign_test": {
+            "scenes_above_chance": 40,
+            "n": 40,
+            "p": 0.0
+          }
+        },
+        "content": {
+          "accuracy": 0.8444,
+          "ci95": [
+            0.8181,
+            0.8694
+          ],
+          "sign_test": {
+            "scenes_above_chance": 40,
+            "n": 40,
+            "p": 0.0
+          }
+        }
+      },
+      "elicited_leak_rate": 0.0261,
+      "naive_pooled_p_DO_NOT_USE": 0.0
+    },
+    "L3": {
+      "n_scenes": 40,
+      "n_turn_judgements": 1920,
+      "surface_accuracy": 0.8401,
+      "surface_ci95": [
+        0.8234,
+        0.8552
+      ],
+      "content_accuracy": 0.8443,
+      "content_ci95": [
+        0.8302,
+        0.8589
+      ],
+      "content_sign_test": {
+        "scenes_above_chance": 40,
+        "n": 40,
+        "p": 0.0
+      },
+      "surface_minus_content": {
+        "diff": -0.0042,
+        "lo": -0.025,
+        "hi": 0.0161,
+        "n": 40,
+        "excludes_zero": false
+      },
+      "turns_ge_16": {
+        "surface": {
+          "accuracy": 0.8528,
+          "ci95": [
+            0.8306,
+            0.875
+          ],
+          "sign_test": {
+            "scenes_above_chance": 40,
+            "n": 40,
+            "p": 0.0
+          }
+        },
+        "content": {
+          "accuracy": 0.8403,
+          "ci95": [
+            0.8097,
+            0.8694
+          ],
+          "sign_test": {
+            "scenes_above_chance": 40,
+            "n": 40,
+            "p": 0.0
+          }
+        }
+      },
+      "elicited_leak_rate": 0.0,
+      "naive_pooled_p_DO_NOT_USE": 0.0
+    },
+    "L4": {
+      "n_scenes": 40,
+      "n_turn_judgements": 1920,
+      "surface_accuracy": 0.8391,
+      "surface_ci95": [
+        0.8224,
+        0.8536
+      ],
+      "content_accuracy": 0.851,
+      "content_ci95": [
+        0.8359,
+        0.8656
+      ],
+      "content_sign_test": {
+        "scenes_above_chance": 40,
+        "n": 40,
+        "p": 0.0
+      },
+      "surface_minus_content": {
+        "diff": -0.012,
+        "lo": -0.0328,
+        "hi": 0.0078,
+        "n": 40,
+        "excludes_zero": false
+      },
+      "turns_ge_16": {
+        "surface": {
+          "accuracy": 0.8472,
+          "ci95": [
+            0.8236,
+            0.8694
+          ],
+          "sign_test": {
+            "scenes_above_chance": 40,
+            "n": 40,
+            "p": 0.0
+          }
+        },
+        "content": {
+          "accuracy": 0.8486,
+          "ci95": [
+            0.8153,
+            0.8806
+          ],
+          "sign_test": {
+            "scenes_above_chance": 40,
+            "n": 40,
+            "p": 0.0
+          }
+        }
+      },
+      "elicited_leak_rate": 0.0,
+      "naive_pooled_p_DO_NOT_USE": 0.0
+    },
+    "ceiling": {
+      "n_scenes": 40,
+      "n_turn_judgements": 1920,
+      "surface_accuracy": 0.849,
+      "surface_ci95": [
+        0.8328,
+        0.8656
+      ],
+      "content_accuracy": 0.8562,
+      "content_ci95": [
+        0.8396,
+        0.8719
+      ],
+      "content_sign_test": {
+        "scenes_above_chance": 40,
+        "n": 40,
+        "p": 0.0
+      },
+      "surface_minus_content": {
+        "diff": -0.0073,
+        "lo": -0.0276,
+        "hi": 0.0135,
+        "n": 40,
+        "excludes_zero": false
+      },
+      "turns_ge_16": {
+        "surface": {
+          "accuracy": 0.8444,
+          "ci95": [
+            0.8181,
+            0.8694
+          ],
+          "sign_test": {
+            "scenes_above_chance": 40,
+            "n": 40,
+            "p": 0.0
+          }
+        },
+        "content": {
+          "accuracy": 0.8681,
+          "ci95": [
+            0.8431,
+            0.8917
+          ],
+          "sign_test": {
+            "scenes_above_chance": 40,
+            "n": 40,
+            "p": 0.0
+          }
+        }
+      },
+      "elicited_leak_rate": 0.0,
+      "naive_pooled_p_DO_NOT_USE": 0.0
+    }
+  },
+  "positions_content_accuracy": {
+    "L1": {
+      "raw": 0.8344,
+      "floor": 0.8318,
+      "ceiling": 0.8562,
+      "position": 0.1066
+    },
+    "L2": {
+      "raw": 0.8484,
+      "floor": 0.8318,
+      "ceiling": 0.8562,
+      "position": 0.6803
+    },
+    "L3": {
+      "raw": 0.8443,
+      "floor": 0.8318,
+      "ceiling": 0.8562,
+      "position": 0.5123
+    },
+    "L4": {
+      "raw": 0.851,
+      "floor": 0.8318,
+      "ceiling": 0.8562,
+      "position": 0.7869
+    }
+  },
+  "regression": {
+    "slope_content_accuracy_on_leak_rate": -0.0033,
+    "n_points": 200,
+    "unit": "scene",
+    "note": "Negative slope is the prediction. A null slope falsifies the framework's central empirical claim."
+  },
+  "judge_unparseable": 0,
+  "judge": {
+    "panel": "judge-panel:rule-judge",
+    "fingerprint": "b43528062af73504",
+    "prompt_version": "1",
+    "standin": true,
+    "temperature": 0.0,
+    "check": {
+      "status": "passed",
+      "scores": {
+        "grader_accuracy": 1.0,
+        "stance_accuracy": 1.0,
+        "attribution_accuracy": 0.8333,
+        "paraphrase_numbers_kept": 1.0,
+        "paraphrase_hedges_removed": 1.0
+      }
+    },
+    "usage": {
+      "paraphrase": {
+        "calls": 1647,
+        "unparseable": 0
+      },
+      "attribution": {
+        "calls": 23040,
+        "unparseable": 0
+      },
+      "grader": {
+        "calls": 0,
+        "unparseable": 0
+      },
+      "stance": {
+        "calls": 0,
+        "unparseable": 0
+      },
+      "unparseable_rate": 0.0,
+      "within_limit": true
+    }
+  },
+  "standin_warning": "Stand-in judges. The regex paraphraser keeps syntax and word choice, so content accuracy is overstated. Not valid for the E2 contrast.",
+  "parameter_substitutions": {}
+}

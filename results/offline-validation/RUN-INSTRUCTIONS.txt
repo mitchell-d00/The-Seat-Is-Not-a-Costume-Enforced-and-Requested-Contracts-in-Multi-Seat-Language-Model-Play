@@ -1,0 +1,61 @@
+Offline experiment validation
+
+Repository: https://github.com/mitchell-d00/The-Seat-Is-Not-a-Costume-Enforced-and-Requested-Contracts-in-Multi-Seat-Language-Model-Play
+Base commit: feccf96c0f2ec20b780dce3240b0efc065ab83b3
+Package version: 0.2.1
+Python: 3.12
+
+Local setup correction: renamed sec/ to src/. Package discovery, pytest,
+experiment imports and the existing draft lock all expect src/. No source
+contents, scientific decisions, judge configuration or lock were changed.
+Nothing was pushed to GitHub.
+
+Validation completed:
+- 149 tests passed.
+- Mock preflight passed, including its prior gate.
+- Offline rule judge passed all calibration thresholds.
+- E1-E4 completed, each at 40 scenes and 24 turns.
+- E1 L3, L4 and ceiling: elicited and volunteered leak rates 0,
+  routing bleed 0.
+- Draft lock matches the restored source tree; results remain exploratory.
+
+These outputs check the harness only. The mock leakage ordering is built in;
+mock rates do not constitute evidence about live model behaviour. The rule
+judge is an offline stand-in and is not valid for live data.
+
+Rerun from a fresh checkout (bash, Python 3.10+):
+
+  git clone https://github.com/mitchell-d00/The-Seat-Is-Not-a-Costume-Enforced-and-Requested-Contracts-in-Multi-Seat-Language-Model-Play.git seat-contracts
+  cd seat-contracts
+  # Apply only if the checkout still uses sec/:
+  if [ -d sec ] && [ ! -e src ]; then mv sec src; fi
+  python3 -m venv .venv
+  source .venv/bin/activate
+  python -m pip install -e '.[dev]'
+  python -m pytest -q
+  python experiments/preflight.py --backends mock
+  python experiments/judge_check.py --judge-backend rule
+  mkdir -p results/offline-validation
+  for e in e1_leak_probe e2_attribution e3_instrument_symmetry; do
+    python experiments/$e.py --backend mock --judge-backend rule --scenes 40 --turns 24 --cache .cache/offline-validation --out results/offline-validation/${e%%_*}.json
+  done
+  python experiments/e4_externalization.py --backend mock --scenes 40 --turns 24 --cache .cache/offline-validation --out results/offline-validation/e4.json
+
+Known protocol gaps, unchanged:
+- P6 at L1 cannot distinguish private vs shared buffers in this implementation.
+- P8 equivalence margin has not been selected; the run reports but does not
+  decide equivalence.
+- E4 does not implement the paper's eight-turn continuation; convention
+  survival is scored by presence in the reseeding context.
+
+Before future live data collection: choose test models from at least two
+families and a separate qualified judge; provide credentials in your own
+runtime; resolve the P6 scope and P8 margin before freezing the protocol.
+Then install '.[live]', pass the live judge check, finalize and check the
+preregistration lock, run preflight and a small pilot, and use the cross-family
+runner for the full grid. Live runs incur provider charges; none were made here.
+
+Included files: this guide, e1-e4 JSON results, E1 audit JSONL, execution logs,
+and the rule-judge calibration record. Responses are cached in the local
+checkout; the cache is omitted from this bundle. A cached rerun is a replay,
+not an independent replication.

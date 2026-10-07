@@ -1,0 +1,30 @@
+[mock backend: these numbers check the harness and are not evidence for any prediction (paper 9.5)]
+
+=== phase 1 at L0 ===
+none   conventions=0.000 constraints(probe)=1.000 constraints(context)=1.000 forbidden_carried=0.00
+tail   conventions=0.688 constraints(probe)=1.000 constraints(context)=0.533 forbidden_carried=0.57
+sheet  conventions=1.000 constraints(probe)=1.000 constraints(context)=0.608 forbidden_carried=0.53
+
+=== phase 1 at L1 ===
+none   conventions=0.000 constraints(probe)=1.000 constraints(context)=1.000 forbidden_carried=0.00
+tail   conventions=0.727 constraints(probe)=1.000 constraints(context)=0.338 forbidden_carried=1.40
+sheet  conventions=1.000 constraints(probe)=1.000 constraints(context)=0.500 forbidden_carried=1.02
+
+=== phase 1 at L3 ===
+none   conventions=0.000 constraints(probe)=1.000 constraints(context)=1.000 forbidden_carried=0.00
+tail   conventions=0.732 constraints(probe)=1.000 constraints(context)=0.812 forbidden_carried=0.20
+sheet  conventions=1.000 constraints(probe)=1.000 constraints(context)=1.000 forbidden_carried=0.00
+
+=== phase 1 at ceiling ===
+none   conventions=0.000 constraints(probe)=1.000 constraints(context)=1.000 forbidden_carried=0.00
+tail   conventions=0.732 constraints(probe)=1.000 constraints(context)=0.812 forbidden_carried=0.20
+sheet  conventions=1.000 constraints(probe)=1.000 constraints(context)=1.000 forbidden_carried=0.00
+
+findings (computed from this run):
+  L0: tail constraint survival 1.000 vs sheet 1.000; P10 not supported (sign test p=1); P9 sheet>tail yes, tail>none yes (mock run: harness check, not evidence)
+  L1: tail constraint survival 1.000 vs sheet 1.000; P10 not supported (sign test p=1); P9 sheet>tail yes, tail>none yes (mock run: harness check, not evidence)
+  L3: tail constraint survival 1.000 vs sheet 1.000; P10 not supported (sign test p=1); P9 sheet>tail yes, tail>none yes (mock run: harness check, not evidence)
+  ceiling: tail constraint survival 1.000 vs sheet 1.000; P10 not supported (sign test p=1); P9 sheet>tail yes, tail>none yes (mock run: harness check, not evidence)
+  tail degrades constraint survival at: no cell (mock run: harness check, not evidence)
+  sheet reaches full constraint survival at: L0, L1, L3, ceiling (mock run: harness check, not evidence)
+wrote results/offline-validation/e4.json
